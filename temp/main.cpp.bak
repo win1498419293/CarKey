@@ -1,0 +1,57 @@
+﻿#include <Arduino.h>
+#include <esp_wifi.h>
+#include <soc/soc.h>
+#include <soc/rtc_cntl_reg.h>
+
+#include "BatteryVoltage.h"
+#include "Config.h"
+#if ENABLE_BLE
+#include "BLEManager.h"
+#endif
+#if ENABLE_CELLULAR
+#include "CellularManager.h"
+#endif
+#include "Logger.h"
+#include "NFCManager.h"
+#include "RelayManager.h"
+#include "StateMachine.h"
+#include "TaskManager.h"
+#include "WebManager.h"
+#include "OTAManager.h"
+
+NFCManager nfcManager;
+RelayManager relayManager;
+StateMachine stateMachine(&relayManager);
+
+void setup() {
+    Serial.begin(115200);
+    delay(1000);
+    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
+    loadSystemConfig();
+    otaManager.init();
+    Logger::info("Current SSID: " + wifi_ssid);
+
+    pinMode(PIN_HANDBRAKE, INPUT_PULLUP);
+    pinMode(PIN_NEUTRAL, INPUT_PULLUP);
+    Logger::info("[SYSTEM] CarKey V5 booting");
+
+    batteryVoltage.init();
+    relayManager.init();
+#if ENABLE_BLE
+    setCpuFrequencyMhz(80);
+    delay(500);
+    bleManager.init();
+    setCpuFrequencyMhz(240);
+#endif
+    esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+    webManager.init();
+    nfcManager.init();
+
+    TaskManager::begin();
+    Logger::info("[SYSTEM] core init done, scheduler online");
+}
+
+void loop() {
+    vTaskDelay(pdMS_TO_TICKS(1000));
+}

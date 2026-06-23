@@ -1,0 +1,17 @@
+﻿.footer { text-align: center; font-size: 10px; color: var(--sub); margin-top: 20px; padding: 10px 0; }
+.pair-card { background: var(--card); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; border: 1px solid var(--border); }
+.pair-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.pair-title { font-size: 11px; color: var(--blue); letter-spacing: 1px; display: flex; align-items: center; gap: 6px; }
+.pair-status { font-size: 10px; padding: 3px 8px; border-radius: 10px; }
+.pair-status-paired { background: rgba(16,185,129,0.2); color: var(--green); }
+.pair-status-none { background: rgba(100,116,139,0.2); color: var(--sub); }
+.pair-status-pairing { background: rgba(59,130,246,0.2); color: var(--blue); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.pair-info { font-size: 10px; color: var(--sub); margin: 4px 0; }
+.pair-info span { color: var(--txt); }
+.pair-btn-row { display: flex; gap: 6px; margin-top: 8px; }
+.pair-btn { font-size: 10px; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; }
+.pair-btn-start { background: var(--blue); color: #fff; }
+.pair-btn-start:disabled { opacity: 0.4; cursor: not-allowed; }
+.pair-btn-stop { background: var(--red); color: #fff; }
+.pair-btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--sub); }

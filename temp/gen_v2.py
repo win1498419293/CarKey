@@ -1,0 +1,346 @@
+html = r"""<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>CarKey V5</title>
+<style>
+:root{--bg:#060b14;--card:#0f1629;--txt:#e2e8f0;--sub:#64748b;--blue:#3b82f6;--green:#10b981;--red:#ef4444;--amber:#f59e0b;--border:rgba(255,255,255,0.06);--glow:rgba(59,130,246,0.25)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:none;margin:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);padding:12px;min-height:100vh;max-width:480px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:8px 0}
+.logo{display:flex;align-items:center;gap:8px}
+.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--blue),#2563eb);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 16px var(--glow)}
+.logo-text{font-size:16px;font-weight:700;letter-spacing:2px}
+.logo-text span{font-weight:300;color:var(--sub);font-size:12px;letter-spacing:1px}
+.nav-btn{font-size:22px;cursor:pointer;color:var(--sub);padding:6px;transition:0.2s}
+.nav-btn:active{color:var(--blue);transform:scale(0.9)}
+.status-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.status-chip{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:10px;color:var(--sub);white-space:nowrap}
+.status-chip .icon{font-size:13px}
+.status-chip .val{font-weight:600;color:var(--txt);margin-left:2px}
+.status-chip.on .val{color:var(--green)}
+.status-chip.off .val{color:var(--sub)}
+.status-chip.warn .val{color:var(--amber)}
+.engine-section{display:flex;justify-content:center;margin:18px 0 14px}
+.engine-btn{width:130px;height:130px;border-radius:50%;background:linear-gradient(145deg,#1a2540,#0d1525);border:2px solid rgba(59,130,246,0.4);box-shadow:0 0 40px var(--glow),inset 0 0 30px rgba(59,130,246,0.05);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s;position:relative}
+.engine-btn::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px solid rgba(59,130,246,0.15);animation:pulse-ring 2s infinite}
+.engine-btn:active{transform:scale(0.93);box-shadow:0 0 60px var(--glow)}
+.engine-btn .eng-icon{font-size:32px;margin-bottom:2px}
+.engine-btn .eng-title{font-size:13px;font-weight:700;letter-spacing:1px}
+.engine-btn .eng-sub{font-size:9px;color:var(--sub);margin-top:1px}
+.engine-btn.running{background:linear-gradient(145deg,#0f2d1a,#0d1525);border-color:rgba(16,185,129,0.5);box-shadow:0 0 40px rgba(16,185,129,0.3),inset 0 0 30px rgba(16,185,129,0.05)}
+.engine-btn.running::after{border-color:rgba(16,185,129,0.2)}
+@keyframes pulse-ring{0%,100%{opacity:0.5;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.act-card{display:flex;align-items:center;gap:10px;padding:14px 12px;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:12px;transition:0.2s}
+.act-card:active{background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.3)}
+.act-icon{font-size:24px;width:40px;text-align:center;flex-shrink:0}
+.act-info{display:flex;flex-direction:column}
+.act-title{font-size:12px;font-weight:600}
+.act-sub{font-size:10px;color:var(--sub);margin-top:1px}
+.card{background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:12px;border:1px solid var(--border)}
+.log-header{font-size:11px;color:var(--sub);margin-bottom:6px;font-weight:600}
+.log-list{display:flex;flex-direction:column;gap:3px;max-height:160px;overflow-y:auto}
+.log-item{background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:5px;font-size:9px;display:flex;gap:6px}
+.log-time{color:var(--sub);white-space:nowrap;flex-shrink:0}
+.footer{text-align:center;font-size:9px;color:var(--sub);margin-top:16px;padding:8px 0}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(6,11,20,0.96);display:none;justify-content:center;align-items:center;z-index:9999}
+.modal-box{background:var(--card);border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:20px;width:90%;max-width:380px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.btn-row{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:500;transition:0.2s}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--sub)}
+.btn-sm{font-size:10px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;transition:0.2s}
+.btn-sm:active{background:rgba(59,130,246,0.15);color:var(--blue)}
+.btn-sm.danger:active{background:rgba(239,68,68,0.15);color:var(--red)}
+label{display:block;font-size:11px;color:var(--sub);margin:10px 0 3px}
+input,select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,0.3);color:var(--txt);font-size:13px}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:11px}
+.toggle{position:relative;display:inline-block;width:42px;height:24px}
+.toggle input{display:none}
+.toggle .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:rgba(100,116,139,0.3);border-radius:24px;transition:0.3s}
+.toggle .slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:0.3s}
+.toggle input:checked+.slider{background:var(--blue)}
+.toggle input:checked+.slider::before{transform:translateX(18px)}
+.divider{height:1px;background:var(--border);margin:12px 0}
+.pair-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500;margin-left:4px}
+.badge-none{background:rgba(100,116,139,0.15);color:var(--sub)}
+.badge-ok{background:rgba(16,185,129,0.15);color:var(--green)}
+.badge-ing{background:rgba(59,130,246,0.15);color:var(--blue);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo"><div class="logo-icon">CK</div><div class="logo-text">CARKEY <span>V5</span></div></div>
+  <span class="nav-btn" onclick="openSettings()">&#9881;</span>
+</div>
+<div class="status-bar" id="statusBar">
+  <div class="status-chip" id="chipGear"><span class="icon">&#9881;</span>&#25377;&#20301;<span class="val">--</span></div>
+  <div class="status-chip" id="chipBrake"><span class="icon">P</span>&#25163;&#21049;<span class="val">--</span></div>
+  <div class="status-chip" id="chipBle"><span class="icon">BT</span>&#34013;&#29273;<span class="val">--</span></div>
+  <div class="status-chip" id="chipNfc"><span class="icon">NF</span>NFC<span class="val">--</span></div>
+  <div class="status-chip" id="chipBatt"><span class="icon">BT</span><span class="val">--.-V</span></div>
+</div>
+<div class="engine-section">
+  <div class="engine-btn" id="engBtn" onclick="toggleEngine()">
+    <div class="eng-icon">&#9889;</div>
+    <div class="eng-title" id="engTitle">START</div>
+    <div class="eng-sub" id="engSub">&#28857;&#20987;&#21551;&#21160;</div>
+  </div>
+</div>
+<div class="grid">
+  <div class="act-card" onclick='doApi("/api/unlock")'>
+    <div class="act-icon">&#128275;</div><div class="act-info"><div class="act-title">&#35299;&#38145;</div><div class="act-sub">&#36710;&#38376;&#35299;&#38145;</div></div>
+  </div>
+  <div class="act-card" onclick='doApi("/api/lock")'>
+    <div class="act-icon">&#128274;</div><div class="act-info"><div class="act-title">&#19978;&#38145;</div><div class="act-sub">&#36710;&#38376;&#19978;&#38145;</div></div>
+  </div>
+  <div class="act-card" onclick='doApi("/api/horn")'>
+    <div class="act-icon">&#128226;</div><div class="act-info"><div class="act-title">&#40483;&#31523;</div><div class="act-sub">&#23547;&#36710;&#40483;&#31523;</div></div>
+  </div>
+  <div class="act-card" onclick='doApi("/api/window")'>
+    <div class="act-icon">&#9644;</div><div class="act-info"><div class="act-title">&#36710;&#31383;</div><div class="act-sub">&#21319;&#38477;&#36710;&#31383;</div></div>
+  </div>
+</div>
+<div class="card">
+  <div class="log-header">&#128203; &#25805;&#20316;&#26085;&#24535;</div>
+  <div class="log-list" id="logList"></div>
+</div>
+<div class="footer">CarKey V5 &copy; 2025</div>
+
+<div class="overlay" id="authOverlay">
+  <div class="modal-box">
+    <div class="modal-title" id="authModalTitle">&#128272; &#21551;&#21160;&#39564;&#35777;</div>
+    <label>&#35831;&#36755;&#20837;&#21551;&#21160;&#23494;&#30721;</label>
+    <input type="password" id="authPwd" placeholder="6&#20301;&#25968;&#23383;&#23494;&#30721;" maxlength="6" inputmode="numeric" autocomplete="off">
+    <div id="authMsg" style="font-size:11px;color:var(--red);margin-top:6px"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeAuth()">&#21462;&#28040;</button>
+      <button class="btn btn-primary" id="authSubmitBtn" onclick="doStart()">&#21551;&#21160;&#24341;&#25806;</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="settingsOverlay">
+  <div class="modal-box">
+    <div class="modal-title">&#9881; &#31995;&#32479;&#35774;&#32622;</div>
+    <label>WiFi SSID</label>
+    <input type="text" id="cfgSsid" placeholder="WiFi&#21517;&#31216;">
+    <label>WiFi &#23494;&#30721;</label>
+    <input type="password" id="cfgPass" placeholder="WiFi&#23494;&#30721;">
+    <label>&#34013;&#29273;&#21517;&#31216;</label>
+    <input type="text" id="cfgBt" placeholder="&#34013;&#29273;&#35774;&#22791;&#21517;">
+    <label>&#21551;&#21160;&#23494;&#30721;</label>
+    <input type="password" id="cfgPwd" placeholder="6&#20301;&#26032;&#21551;&#21160;&#23494;&#30721;">
+    <div class="toggle-row"><span>&#23433;&#20840;&#35748;&#35777;</span><label class="toggle"><input type="checkbox" id="cfgSec"><span class="slider"></span></label></div>
+    <div class="toggle-row"><span>BLE&#25195;&#25551;</span><label class="toggle"><input type="checkbox" id="cfgBleScan"><span class="slider"></span></label></div>
+    <div class="toggle-row"><span>NFC&#25195;&#25551;</span><label class="toggle"><input type="checkbox" id="cfgNfcScan"><span class="slider"></span></label></div>
+    <div class="divider"></div>
+    <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:6px">&#128225; BLE &#37197;&#23545;</div>
+    <div id="pInfo" style="font-size:10px;color:var(--sub);margin:4px 0">&#28857;&#20987;&#24320;&#22987;&#37197;&#23545;&#65292;&#22312;&#25163;&#26426;&#34013;&#29273;&#20013;&#25628;&#32032;&#35774;&#22791;</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="btn-sm" id="pStart" onclick="startPair()">&#24320;&#22987;&#37197;&#23545;</button>
+      <button class="btn-sm" id="pStop" onclick="stopPair()" style="display:none">&#20572;&#27490;</button>
+      <button class="btn-sm danger" onclick="clearPair()">&#28165;&#38500;</button>
+      <span class="pair-status badge-none" id="pBadge">&#26410;&#37197;&#23545;</span>
+    </div>
+    <div class="divider"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSettings()">&#21462;&#28040;</button>
+      <button class="btn btn-danger" onclick="rebootDevice()">&#37325;&#21551;</button>
+      <button class="btn btn-primary" onclick="saveSettings()">&#20445;&#23384;</button>
+    </div>
+    <div id="settingsMsg" style="font-size:11px;color:var(--red);margin-top:8px"></div>
+  </div>
+</div>
+
+<script>
+var E=function(id){return document.getElementById(id)};
+function addLog(m,t){
+  var l=E('logList');if(!l)return;
+  var d=new Date(),ts=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2);
+  var c=t==='err'?'var(--red)':t==='ok'?'var(--green)':'var(--sub)';
+  l.innerHTML='<div class="log-item"><span class="log-time">'+ts+'</span><span style="color:'+c+'">'+m+'</span></div>'+l.innerHTML;
+  if(l.children.length>50)l.removeChild(l.lastChild);
+}
+function toggleEngine(){var rn=E('engBtn').classList.contains('running');if(rn){if(confirm('\u786E\u5B9A\u505C\u6B62\u5F15\u64CE?')){openAuth('stop')}}else{openAuth('start')}}
+function openAuth(m){window._authMode=m||'start';E('authOverlay').style.display='flex';E('authPwd').focus();var t=m==='stop'?'\u505C\u6B62\u9A8C\u8BC1':'\u542F\u52A8\u9A8C\u8BC1';E('authModalTitle').innerHTML=t;var b=m==='stop'?'\u505C\u6B62\u5F15\u64CE':'\u542F\u52A8\u5F15\u64CE';E('authSubmitBtn').innerHTML=b}
+function closeAuth(){E('authOverlay').style.display='none';E('authPwd').value='';E('authMsg').innerHTML=''}
+function doStart(){
+  var p=E('authPwd').value;
+  if(!p||p.length!==6){E('authMsg').innerHTML='\u8BF7\u8F93\u51656\u4F4D\u5BC6\u7801';return}
+  var mode=window._authMode||'start';
+  var url=mode==='stop'?'/api/stop_engine?pwd='+p:'/api/start_engine?pwd='+p;
+  var label=mode==='stop'?'\u505C\u6B62\u5F15\u64CE':'\u542F\u52A8\u5F15\u64CE';
+  addLog(label+'...','info');
+  fetch(url).then(function(r){
+    if(r.status===200||r.status===202){addLog(label+'\u6210\u529F','ok');closeAuth();return}
+    return r.text().then(function(t){if(r.status===401)E('authMsg').innerHTML='\u5BC6\u7801\u9519\u8BEF';else if(r.status===409)E('authMsg').innerHTML='\u5F15\u64CE\u672A\u8FD0\u884C';else E('authMsg').innerHTML=t})
+  }).catch(function(){addLog('\u7F51\u7EDC\u9519\u8BEF','err')});
+}
+function doApi(url){addLog('\u6267\u884C: '+url,'info');fetch(url).then(function(r){return r.text()}).then(function(t){addLog('\u6210\u529F: '+t,'ok')}).catch(function(){addLog('\u5931\u8D25','err')});}
+function openSettings(){
+  E('settingsOverlay').style.display='flex';
+  fetch('/api/status').then(function(r){return r.json()}).then(function(d){
+    if(E('cfgSsid'))E('cfgSsid').value=d.wifi_ssid||'';
+    if(E('cfgBt'))E('cfgBt').value=d.bt_name||'';
+    if(E('cfgSec'))E('cfgSec').checked=d.sec_auth||false;
+    if(E('cfgBleScan'))E('cfgBleScan').checked=d.ble_scan||false;
+    if(E('cfgNfcScan'))E('cfgNfcScan').checked=d.nfc_scan!==false;
+  }).catch(function(){});
+  updatePairStatus();
+}
+function closeSettings(){E('settingsOverlay').style.display='none'}
+function saveSettings(){
+  var u='/api/update_config?new_ssid='+encodeURIComponent(E('cfgSsid').value)+'&new_bt='+encodeURIComponent(E('cfgBt').value);
+  if(E('cfgPass').value)u+='&new_pass='+encodeURIComponent(E('cfgPass').value);
+  if(E('cfgPwd').value)u+='&new_pwd='+encodeURIComponent(E('cfgPwd').value);
+  u+='&sec_auth='+E('cfgSec').checked+'&ble_scan='+E('cfgBleScan').checked+'&nfc_scan='+E('cfgNfcScan').checked;
+  fetch(u,{method:'POST'}).then(function(r){
+    if(r.status===200){addLog('\u4FDD\u5B58\u6210\u529F','ok');closeSettings()}
+    else{addLog('\u4FDD\u5B58\u5931\u8D25: '+r.status,'err')}
+  }).catch(function(){addLog('\u7F51\u7EDC\u9519\u8BEF','err')});
+}
+function rebootDevice(){if(confirm('\u786E\u5B9A\u91CD\u542F\u8BBE\u5907?')){fetch('/api/reboot');setTimeout(function(){location.reload()},3000)}}
+function updatePairStatus(){
+  fetch('/api/ble/pairing/status').then(function(r){return r.json()}).then(function(d){
+    if(d.pairing){
+      E('pBadge').className='pair-status badge-ing';E('pBadge').innerHTML='\u914D\u5BF9\u4E2D...';
+      E('pInfo').innerHTML='\u8BF7\u5728\u624B\u673A\u84DD\u7259\u8BBE\u7F6E\u4E2D\u641C\u7D22\u5E76\u914D\u5BF9';
+      E('pStart').style.display='none';E('pStop').style.display='inline-block';
+    }else if(d.paired){
+      E('pBadge').className='pair-status badge-ok';E('pBadge').innerHTML='\u5DF2\u914D\u5BF9';
+      E('pInfo').innerHTML='\u5DF2\u8FDE\u63A5: <b>'+d.name+'</b> ('+d.mac+')';
+      E('pStart').style.display='inline-block';E('pStop').style.display='none';
+      var blc=E('chipBle');if(blc&&!blc.querySelector('.val').innerHTML.match('\u5DF2\u8BA4\u8BC1')){
+        blc.querySelector('.val').innerHTML='\u5DF2\u914D\u5BF9';blc.className='status-chip on';}
+    }else{
+      E('pBadge').className='pair-status badge-none';E('pBadge').innerHTML='\u672A\u914D\u5BF9';
+      E('pInfo').innerHTML='\u70B9\u51FB\u5F00\u59CB\u914D\u5BF9\uFF0C\u5728\u624B\u673A\u84DD\u7259\u4E2D\u641C\u7D22\u8BBE\u5907';
+      E('pStart').style.display='inline-block';E('pStop').style.display='none';
+    }
+  }).catch(function(){});
+}
+function startPair(){
+  addLog('\u5F00\u59CB\u914D\u5BF9...','info');
+  fetch('/api/ble/pairing/start').then(function(r){return r.json()}).then(function(d){
+    addLog(d.message,'ok');updatePairStatus();
+  }).catch(function(){addLog('\u914D\u5BF9\u5931\u8D25','err')});
+}
+function stopPair(){
+  fetch('/api/ble/pairing/stop').then(function(r){return r.json()}).then(function(d){
+    addLog(d.message,'ok');updatePairStatus();
+  }).catch(function(){addLog('\u505C\u6B62\u5931\u8D25','err')});
+}
+function clearPair(){
+  if(!confirm('\u786E\u5B9A\u6E05\u9664\u914D\u5BF9\u4FE1\u606F?'))return;
+  fetch('/api/ble/pairing/clear').then(function(r){return r.json()}).then(function(d){
+    addLog(d.message,'ok');updatePairStatus();
+  }).catch(function(){addLog('\u6E05\u9664\u5931\u8D25','err')});
+}
+var _lastEngine=null;var _lastLocked=null;
+function updateStatus(){
+  fetch('/api/status').then(function(r){return r.json()}).then(function(d){
+    var rn=d.engine_running;
+    if(_lastEngine!==null&&_lastEngine!==rn){addLog(rn?'\u5F15\u64CE\u5DF2\u542F\u52A8':'\u5F15\u64CE\u5DF2\u505C\u6B62',rn?'ok':'info')}
+    _lastEngine=rn;
+    var cl=d.config_locked;
+    if(_lastLocked!==null&&_lastLocked!==cl){addLog(cl?'NFC\u5DF2\u9501\u5B9A\u914D\u7F6E':'NFC\u5DF2\u89E3\u9501',cl?'warn':'ok')}
+    _lastLocked=cl;
+    var btn=E('engBtn');
+    E('engTitle').innerHTML=rn?'STOP':'START';
+    E('engSub').innerHTML=rn?'\u5F15\u64CE\u8FD0\u884C\u4E2D':'\u70B9\u51FB\u542F\u52A8\u5F15\u64CE';
+    if(rn){btn.classList.add('running')}else{btn.classList.remove('running')}
+    E('engTitle').style.color=rn?'var(--green)':'';
+    var v=d.voltage||0;
+    E('chipBatt').querySelector('.val').innerHTML=v?v.toFixed(1)+' V':'--.-V';
+    var g=d.gear||'--';
+    var gc=E('chipGear');gc.querySelector('.val').innerHTML=g;
+    gc.className='status-chip'+(g==='N'?' on':'');
+    var hb=d.handbrake;
+    var bc=E('chipBrake');bc.querySelector('.val').innerHTML=hb?'\u5DF2\u62C9\u8D77':'\u5DF2\u91CA\u653E';
+    bc.className='status-chip'+(hb?' on':' off');
+    var ba=d.ble_authorized||d.ble_auth_valid;
+    var bs=d.ble_scanning;
+    var blc=E('chipBle');
+    if(ba){
+      blc.querySelector('.val').innerHTML='\u5DF2\u8BA4\u8BC1';
+      blc.className='status-chip on';
+    }else if(bs){
+      blc.querySelector('.val').innerHTML='\u626B\u63CF\u4E2D';
+      blc.className='status-chip on';
+    }else{
+      var ls=d.ble_last_seen;
+      if(ls>0){blc.querySelector('.val').innerHTML=ls+'s\u524D';blc.className='status-chip off';}
+      else{blc.querySelector('.val').innerHTML='\u5F85\u673A';blc.className='status-chip off';}
+    }
+    var nc=E('chipNfc');
+    var na=d.nfc_scan!==false;
+    if(cl){
+      nc.querySelector('.val').innerHTML='\u5DF2\u9501\u5B9A';
+      nc.className='status-chip warn';
+    }else if(!na){
+      nc.querySelector('.val').innerHTML='\u5DF2\u5173\u95ED';
+      nc.className='status-chip off';
+    }else{
+      nc.querySelector('.val').innerHTML='\u5DF2\u89E3\u9501';
+      nc.className='status-chip on';
+    }
+  }).catch(function(){});
+}
+addLog('\u7CFB\u7EDF\u5C31\u7EEA','ok');
+updateStatus();
+updatePairStatus();
+setInterval(updateStatus,2000);
+setInterval(updatePairStatus,3000);
+</script>
+</body>
+</html>"""
+
+# Now generate the PROGMEM header
+lines = html.split("\n")
+output = [
+    "#pragma once",
+    "#include <pgmspace.h>",
+    "const char kEmbeddedIndexPage[] PROGMEM ="
+]
+for i, line in enumerate(lines):
+    escaped = line.replace("\\", "\\\\").replace('"', '\\"')
+    if i < len(lines) - 1:
+        output.append('  "' + escaped + '\\n"')
+    else:
+        output.append('  "' + escaped + '\\n"')
+output.append('  "\\n"')
+output.append(";")
+output.append("")
+
+with open(r"D:\CarKey_V5\include\EmbeddedIndexPage.h", "w", encoding="ascii", newline="") as f:
+    f.write("\n".join(output))
+
+# Verify
+with open(r"D:\CarKey_V5\include\EmbeddedIndexPage.h", "r", encoding="ascii") as f:
+    content = f.read()
+
+checks = [
+    ("NFC toggle exists", "cfgNfcScan" in content),
+    ("nfc_scan in saveSettings", "nfc_scan" in content),
+    ("BLE pair in settings", "startPair" in content),
+    ("No pairCard on main", "pairCard" not in content),
+    ("Settings overlay", "settingsOverlay" in content),
+    ("Auth overlay", "authOverlay" in content),
+    ("JS unicode escapes", "\\u" in content),
+]
+print(f"Generated {len(output)} lines, {len(html)} bytes HTML")
+for name, ok in checks:
+    print(f"  {'[OK]' if ok else '[MISSING]'} {name}")
+
+# check for remaining HTML entities (body only - should have some)
+import re
+body_end = content.find("<script>")
+body = content[:body_end] if body_end > 0 else content
+entities_in_body = len(re.findall(r'&#\d+;', body))
+print(f"  HTML entities in body: {entities_in_body}")

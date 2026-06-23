@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>CarKey V5</title>
+<style>
+:root{--bg:#060b14;--card:#0f1629;--txt:#e2e8f0;--sub:#64748b;--blue:#3b82f6;--green:#10b981;--red:#ef4444;--amber:#f59e0b;--border:rgba(255,255,255,0.06);--glow:rgba(59,130,246,0.25)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:none;margin:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);padding:12px;min-height:100vh;max-width:480px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:8px 0}
+.logo{display:flex;align-items:center;gap:8px}
+.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--blue),#2563eb);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 16px var(--glow)}
+.logo-text{font-size:16px;font-weight:700;letter-spacing:2px}
+.logo-text span{font-weight:300;color:var(--sub);font-size:12px;letter-spacing:1px}
+.nav-btn{font-size:22px;cursor:pointer;color:var(--sub);padding:6px;transition:0.2s}
+.nav-btn:active{color:var(--blue);transform:scale(0.9)}
+.status-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.status-chip{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:10px;color:var(--sub);white-space:nowrap}
+.status-chip .icon{font-size:13px}
+.status-chip .val{font-weight:600;color:var(--txt);margin-left:2px}
+.status-chip.on .val{color:var(--green)}
+.status-chip.off .val{color:var(--sub)}
+.status-chip.warn .val{color:var(--amber)}
+.engine-section{display:flex;justify-content:center;margin:18px 0 14px}
+.engine-btn{width:130px;height:130px;border-radius:50%;background:linear-gradient(145deg,#1a2540,#0d1525);border:2px solid rgba(59,130,246,0.4);box-shadow:0 0 40px var(--glow),inset 0 0 30px rgba(59,130,246,0.05);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s;position:relative}
+.engine-btn::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px solid rgba(59,130,246,0.15);animation:pulse-ring 2s infinite}
+.engine-btn:active{transform:scale(0.93);box-shadow:0 0 60px var(--glow)}
+.engine-btn .eng-icon{font-size:32px;margin-bottom:2px}
+.engine-btn .eng-title{font-size:13px;font-weight:700;letter-spacing:1px}
+.engine-btn .eng-sub{font-size:9px;color:var(--sub);margin-top:1px}
+.engine-btn.running{background:linear-gradient(145deg,#0f2d1a,#0d1525);border-color:rgba(16,185,129,0.5);box-shadow:0 0 40px rgba(16,185,129,0.3),inset 0 0 30px rgba(16,185,129,0.05)}
+.engine-btn.running::after{border-color:rgba(16,185,129,0.2)}
+@keyframes pulse-ring{0%,100%{opacity:0.5;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.act-card{display:flex;align-items:center;gap:10px;padding:14px 12px;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:12px;transition:0.2s}
+.act-card:active{background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.3)}
+.act-icon{font-size:24px;width:40px;text-align:center;flex-shrink:0}
+.act-info{display:flex;flex-direction:column}
+.act-title{font-size:12px;font-weight:600}
+.act-sub{font-size:10px;color:var(--sub);margin-top:1px}
+.card{background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:12px;border:1px solid var(--border)}
+.pair-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.pair-label{font-size:11px;color:var(--blue);letter-spacing:1px;font-weight:600}
+.pair-badge{font-size:9px;padding:2px 8px;border-radius:10px;font-weight:500}
+.badge-none{background:rgba(100,116,139,0.15);color:var(--sub)}
+.badge-ok{background:rgba(16,185,129,0.15);color:var(--green)}
+.badge-ing{background:rgba(59,130,246,0.15);color:var(--blue);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.pair-info{font-size:10px;color:var(--sub);margin:4px 0}
+.pair-actions{display:flex;gap:6px;margin-top:6px}
+.pair-btn{font-size:10px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;transition:0.2s}
+.pair-btn:active{background:rgba(59,130,246,0.15);color:var(--blue)}
+.pair-btn.danger:active{background:rgba(239,68,68,0.15);color:var(--red)}
+.log-header{font-size:11px;color:var(--sub);margin-bottom:6px;font-weight:600}
+.log-list{display:flex;flex-direction:column;gap:3px;max-height:160px;overflow-y:auto}
+.log-item{background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:5px;font-size:9px;display:flex;gap:6px}
+.log-time{color:var(--sub);white-space:nowrap;flex-shrink:0}
+.footer{text-align:center;font-size:9px;color:var(--sub);margin-top:16px;padding:8px 0}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(6,11,20,0.96);display:none;justify-content:center;align-items:center;z-index:9999}
+.modal-box{background:var(--card);border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:20px;width:90%;max-width:360px}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.btn-row{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:500;transition:0.2s}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--sub)}
+label{display:block;font-size:11px;color:var(--sub);margin:10px 0 3px}
+input,select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,0.3);color:var(--txt);font-size:13px}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:11px}
+.toggle{position:relative;display:inline-block;width:42px;height:24px}
+.toggle input{display:none}
+.toggle .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:rgba(100,116,139,0.3);border-radius:24px;transition:0.3s}
+.toggle .slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:0.3s}
+.toggle input:checked+.slider{background:var(--blue)}
+.toggle input:checked+.slider::before{transform:translateX(18px)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">??</div>
+    <div class="logo-text">CARKEY <span>V5</span></div>
+  </div>
+  <span class="nav-btn" onclick="openSettings()">?</span>
+</div>
+<div class="status-bar" id="statusBar">
+  <div class="status-chip" id="chipGear"><span class="icon">?</span>??<span class="val">--</span></div>
+  <div class="status-chip" id="chipBrake"><span class="icon">??</span>??<span class="val">--</span></div>
+  <div class="status-chip" id="chipBle"><span class="icon">??</span>??<span class="val">--</span></div>
+  <div class="status-chip" id="chipNfc"><span class="icon">??</span>NFC<span class="val">--</span></div>
+  <div class="status-chip" id="chipBatt"><span class="icon">??</span><span class="val">--.-V</span></div>
+</div>
+<div class="engine-section">
+  <div class="engine-btn" id="engBtn" onclick="openAuth()">
+    <div class="eng-icon">?</div>
+    <div class="eng-title" id="engTitle">START</div>
+    <div class="eng-sub" id="engSub">????</div>
+  </div>
+</div>
+<div class="grid">
+  <div class="act-card" onclick="doApi('/api/unlock')">
+    <div class="act-icon">??</div>
+    <div class="act-info"><div class="act-title">??</div><div class="act-sub">????</div></div>
+  </div>
+  <div class="act-card" onclick="doApi('/api/lock')">
+    <div class="act-icon">??</div>
+    <div class="act-info"><div class="act-title">??</div><div class="act-sub">????</div></div>
+  </div>
+  <div class="act-card" onclick="doApi('/api/horn')">
+    <div class="act-icon">??</div>
+    <div class="act-info"><div class="act-title">??</div><div class="act-sub">????</div></div>
+  </div>
+  <div class="act-card" onclick="doApi('/api/window')">
+    <div class="act-icon">??</div>
+    <div class="act-info"><div class="act-title">??</div><div class="act-sub">????</div></div>
+  </div>
+</div>
+<div class="card" id="pairCard">
+  <div class="pair-header">
+    <span class="pair-label">?? BLE ??</span>
+    <span class="pair-badge badge-none" id="pBadge">???</span>
+  </div>
+  <div class="pair-info" id="pInfo">?????????????????</div>
+  <div class="pair-actions">
+    <button class="pair-btn" id="pStart" onclick="startPair()">????</button>
+    <button class="pair-btn" id="pStop" onclick="stopPair()" style="display:none">????</button>
+    <button class="pair-btn danger" onclick="clearPair()">????</button>
+  </div>
+</div>
+<div class="card">
+  <div class="log-header">?? ????</div>
+  <div class="log-list" id="logList"></div>
+</div>
+<div class="footer">CarKey V5 &copy; 2025</div>
+<div class="overlay" id="authOverlay">
+  <div class="modal-box">
+    <div class="modal-title">?? ????</div>
+    <label>???????</label>
+    <input type="password" id="authPwd" placeholder="6?????" maxlength="6" inputmode="numeric" autocomplete="off">
+    <div id="authMsg" style="font-size:11px;color:var(--red);margin-top:6px"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeAuth()">??</button>
+      <button class="btn btn-primary" onclick="doStart()">????</button>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="settingsOverlay">
+  <div class="modal-box">
+    <div class="modal-title">? ????</div>
+    <label>WiFi SSID</label>
+    <input type="text" id="cfgSsid" placeholder="WiFi??">
+    <label>WiFi ??</label>
+    <input type="password" id="cfgPass" placeholder="WiFi??">
+    <label>????</label>
+    <input type="text" id="cfgBt" placeholder="?????">
+    <label>????</label>
+    <input type="password" id="cfgPwd" placeholder="6??????">
+    <div class="toggle-row">
+      <span>????</span>
+      <label class="toggle"><input type="checkbox" id="cfgSec"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span>BLE??</span>
+      <label class="toggle"><input type="checkbox" id="cfgBleScan"><span class="slider"></span></label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSettings()">??</button>
+      <button class="btn btn-danger" onclick="rebootDevice()">??</button>
+      <button class="btn btn-primary" onclick="saveSettings()">??</button>
+    </div>
+    <div id="settingsMsg" style="font-size:11px;color:var(--red);margin-top:8px"></div>
+  </div>
+</div>
+<script>
+var E=function(id){return document.getElementById(id)};
+function addLog(m,t){
+  var l=E('logList');if(!l)return;
+  var d=new Date(),ts=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2);
+  var c=t==='err'?'var(--red)':t==='ok'?'var(--green)':'var(--sub)';
+  l.innerHTML='<div class="log-item"><span class="log-time">'+ts+'</span><span style="color:'+c+'">'+m+'</span></div>'+l.innerHTML;
+  if(l.children.length>50)l.removeChild(l.lastChild);
+}
+function openAuth(){E('authOverlay').style.display='flex';E('authPwd').focus()}
+function closeAuth(){E('authOverlay').style.display='none';E('authPwd').value='';E('authMsg').innerText=''}
+function doStart(){
+  var p=E('authPwd').value;
+  if(!p||p.length!==6){E('authMsg').innerText='???6???';return}
+  addLog('????...','info');
+  fetch('/api/start_engine?pwd='+p).then(function(r){
+    if(r.status===200||r.status===202){addLog('????','ok');closeAuth();return}
+    return r.text().then(function(t){if(r.status===401)E('authMsg').innerText='????';else E('authMsg').innerText=t})
+  }).catch(function(){addLog('????','err')});
+}
+function doApi(url){addLog('??: '+url,'info');fetch(url).then(function(r){return r.text()}).then(function(t){addLog('??: '+t,'ok')}).catch(function(){addLog('??','err')});}
+function openSettings(){
+  E('settingsOverlay').style.display='flex';
+  fetch('/api/status').then(function(r){return r.json()}).then(function(d){
+    if(E('cfgSsid'))E('cfgSsid').value=d.wifi_ssid||'';
+    if(E('cfgBt'))E('cfgBt').value=d.bt_name||'';
+    if(E('cfgSec'))E('cfgSec').checked=d.sec_auth||false;
+    if(E('cfgBleScan'))E('cfgBleScan').checked=d.ble_scan||false;
+  }).catch(function(){});
+}
+function closeSettings(){E('settingsOverlay').style.display='none'}
+function saveSettings(){
+  var u='/api/update_config?new_ssid='+encodeURIComponent(E('cfgSsid').value)+'&new_bt='+encodeURIComponent(E('cfgBt').value);
+  if(E('cfgPass').value)u+='&new_pass='+encodeURIComponent(E('cfgPass').value);
+  if(E('cfgPwd').value)u+='&new_pwd='+encodeURIComponent(E('cfgPwd').value);
+  u+='&sec_auth='+E('cfgSec').checked+'&ble_scan='+E('cfgBleScan').checked;
+  fetch(u,{method:'POST'}).then(function(r){
+    if(r.status===200){addLog('????','ok');closeSettings()}
+    else{addLog('????: '+r.status,'err')}
+  }).catch(function(){addLog('????','err')});
+}
+function rebootDevice(){if(confirm('???????')){fetch('/api/reboot');setTimeout(function(){location.reload()},3000)}}
+function updateStatus(){
+  fetch('/api/status').then(function(r){return r.json()}).then(function(d){
+    var rn=d.engine_running;
+    var btn=E('engBtn');
+    E('engTitle').innerText=rn?'STOP':'START';
+    E('engSub').innerText=rn?'?????':'??????';
+    if(rn){btn.classList.add('running')}else{btn.classList.remove('running')}
+    E('engTitle').style.color=rn?'var(--green)':'';
+    var v=d.voltage||0;
+    E('chipBatt').querySelector('.val').innerText=v?v.toFixed(1)+' V':'--.-V';
+    var g=d.gear||'--';
+    var gc=E('chipGear');gc.querySelector('.val').innerText=g;
+    gc.className='status-chip'+(g==='N'?' on':'');
+    var hb=d.handbrake;
+    var bc=E('chipBrake');bc.querySelector('.val').innerText=hb?'???':'???';
+    bc.className='status-chip'+(hb?' on':' off');
+    var ba=d.ble_authorized||d.ble_auth_valid;
+    var blc=E('chipBle');blc.querySelector('.val').innerText=ba?'???':'???';
+    blc.className='status-chip'+(ba?' on':' off');
+    var cl=d.config_locked;
+    var nc=E('chipNfc');nc.querySelector('.val').innerText=cl?'???':'???';
+    nc.className='status-chip'+(cl?' warn':' on');
+  }).catch(function(){});
+}
+function updatePairStatus(){
+  fetch('/api/ble/pairing/status').then(function(r){return r.json()}).then(function(d){
+    if(d.pairing){
+      E('pBadge').className='pair-badge badge-ing';E('pBadge').innerText='???...';
+      E('pInfo').innerText='??????????????';
+      E('pStart').style.display='none';E('pStop').style.display='inline-block';
+    }else if(d.paired){
+      E('pBadge').className='pair-badge badge-ok';E('pBadge').innerText='???';
+      E('pInfo').innerHTML='???: <b>'+d.name+'</b> ('+d.mac+')';
+      E('pStart').style.display='inline-block';E('pStop').style.display='none';
+    }else{
+      E('pBadge').className='pair-badge badge-none';E('pBadge').innerText='???';
+      E('pInfo').innerText='?????????????????';
+      E('pStart').style.display='inline-block';E('pStop').style.display='none';
+    }
+  }).catch(function(){});
+}
+function startPair(){
+  addLog('????...','info');
+  fetch('/api/ble/pairing/start').then(function(r){return r.json()}).then(function(d){
+    addLog(d.message,'ok');updatePairStatus();
+  }).catch(function(){addLog('????','err')});
+}
+function stopPair(){
+  fetch('/api/ble/pairing/stop').then(function(r){return r.json()}).then(function(d){
+    addLog(d.message,'ok');updatePairStatus();
+  }).catch(function(){addLog('????','err')});
+}
+function clearPair(){
+  if(!confirm('?????????'))return;
+  fetch('/api/ble/pairing/clear').then(function(r){return r.json()}).then(function(d){
+    addLog(d.message,'ok');updatePairStatus();
+  }).catch(function(){addLog('????','err')});
+}
+addLog('????','ok');
+updateStatus();
+updatePairStatus();
+setInterval(updateStatus,2000);
+setInterval(updatePairStatus,3000);
+</script>
+</body>
+</html>
