@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 class RelayManager {
 public:
@@ -7,18 +7,19 @@ public:
     void off();
     bool isOn();
 
-    bool startEngine(); 
+    // Engine relay sequence (does not set engine running state — VehicleStatusManager handles detection)
+    bool startEngine();
     void stopEngine();
     void update();
+
     // Horn control
-    bool isEngineRunning(); 
     void triggerAlarm();
     void stopAlarm();
 
 private:
     bool state = false;
-    bool engineRunning = false; // Engine running state
-    unsigned long startChargeVerifyBeginMs = 0; // 0 = not verifying
+    bool engineRelayActive = false;    // Track if start relay sequence was executed
+    unsigned long startChargeVerifyBeginMs = 0;
 };
 
 extern RelayManager relayManager;

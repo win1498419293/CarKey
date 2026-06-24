@@ -3,6 +3,7 @@
 #include "RelayManager.h"
 #include "StateMachine.h"
 #include "BatteryVoltage.h"
+#include "VehicleStatus.h"
 #include "Logger.h"
 #include "TaskManager.h"
 #include "OTAManager.h"
@@ -17,6 +18,7 @@
 extern RelayManager relayManager;
 extern StateMachine stateMachine;
 extern BatteryVoltage batteryVoltage;
+extern VehicleStatusManager vehicleStatus;
 extern NFCManager nfcManager;
 #if ENABLE_BLE
 extern BLEManager bleManager;
@@ -361,13 +363,26 @@ void WebManager::setupRoutes() {
         }
 
         Logger::info("[Web] Remote engine start requested");
-        if (!TaskManager::sendVehicleCommand(VehicleCommandType::VEHICLE_CMD_START_FROM_WEB, 20)) {
+
+        // Execute relay sequence directly (synchronous)
+        if (!relayManager.startEngine()) {
             sendNoCacheHeaders();
-            server.send(503, "text/plain", "Vehicle queue busy");
+            server.send(503, "text/plain", "START_SEQUENCE_FAILED");
             return;
         }
-        sendNoCacheHeaders();
-        server.send(202, "text/plain", "Engine Start Command Accepted");
+
+        // V1.1: Wait and verify engine actually started via voltage
+        bool started = vehicleStatus.verifyEngineStart();
+
+        if (started) {
+            stateMachine.requireSecondaryAuth();
+            sendNoCacheHeaders();
+            server.send(200, "text/plain", "ENGINE_STARTED");
+        } else {
+            relayManager.stopEngine();
+            sendNoCacheHeaders();
+            server.send(503, "text/plain", "ENGINE_START_FAILED");
+        }
     });
 
     server.on("/api/stop_engine", []() {
@@ -378,7 +393,7 @@ void WebManager::setupRoutes() {
             return;
         }
 
-        if (!relayManager.isEngineRunning()) {
+        if (!vehicleStatus.isEngineRunning()) {
             sendNoCacheHeaders();
             server.send(409, "text/plain", "ENGINE_NOT_RUNNING");
             return;
@@ -422,7 +437,7 @@ void WebManager::setupRoutes() {
         json += "\"low_battery\":" + String(lowBattery ? "true" : "false") + ",";
         json += "\"handbrake\":" + String(isHandbrakePulled ? "true" : "false") + ",";
         json += "\"gear\":\"" + gearState + "\",";
-        json += "\"engine_running\":" + String(relayManager.isEngineRunning() ? "true" : "false") + ",";
+        json += "\"engine_running\":" + String(vehicleStatus.isEngineRunning() ? "true" : "false") + ",";
         json += "\"config_locked\":" + String(webAccessLocked ? "true" : "false") + ",";
         json += "\"locked\":" + String(webAccessLocked ? "true" : "false") + ",";
         json += "\"wifi_ssid\":\"" + jsonEscape(wifi_ssid) + "\",";
@@ -680,29 +695,29 @@ server.on("/api/system/info", []() {
         sendNoCacheHeaders();
         String json = "{";
         // RAM
-        json += ""heap_free":" + String(ESP.getFreeHeap()) + ",";
-        json += ""heap_total":" + String(ESP.getHeapSize()) + ",";
-        json += ""heap_min_free":" + String(ESP.getMinFreeHeap()) + ",";
-        json += ""heap_max_alloc":" + String(ESP.getMaxAllocHeap()) + ",";
+        json += "\"heap_free\":" + String(ESP.getFreeHeap()) + ",";
+        json += "\"heap_total\":" + String(ESP.getHeapSize()) + ",";
+        json += "\"heap_min_free\":" + String(ESP.getMinFreeHeap()) + ",";
+        json += "\"heap_max_alloc\":" + String(ESP.getMaxAllocHeap()) + ",";
         // PSRAM
 #ifdef BOARD_HAS_PSRAM
-        json += ""psram_size":" + String(ESP.getPsramSize()) + ",";
-        json += ""psram_free":" + String(ESP.getFreePsram()) + ",";
-        json += ""psram_min_free":" + String(ESP.getMinFreePsram()) + ",";
-        json += ""psram_max_alloc":" + String(ESP.getMaxAllocPsram()) + ",";
+        json += "\"psram_size\":" + String(ESP.getPsramSize()) + ",";
+        json += "\"psram_free\":" + String(ESP.getFreePsram()) + ",";
+        json += "\"psram_min_free\":" + String(ESP.getMinFreePsram()) + ",";
+        json += "\"psram_max_alloc\":" + String(ESP.getMaxAllocPsram()) + ",";
 #else
-        json += ""psram_size":0,";
-        json += ""psram_free":0,";
-        json += ""psram_min_free":0,";
-        json += ""psram_max_alloc":0,";
+        json += "\"psram_size\":0,";
+        json += "\"psram_free\":0,";
+        json += "\"psram_min_free\":0,";
+        json += "\"psram_max_alloc\":0,";
 #endif
         // Flash
-        json += ""flash_size":" + String(ESP.getFlashChipSize()) + ",";
-        json += ""flash_speed":" + String(ESP.getFlashChipSpeed()) + ",";
-        json += ""sketch_size":" + String(ESP.getSketchSize()) + ",";
-        json += ""sketch_free":" + String(ESP.getFreeSketchSpace()) + ",";
-        json += ""spiffs_total":" + String(SPIFFS.totalBytes()) + ",";
-        json += ""spiffs_used":" + String(SPIFFS.usedBytes());
+        json += "\"flash_size\":" + String(ESP.getFlashChipSize()) + ",";
+        json += "\"flash_speed\":" + String(ESP.getFlashChipSpeed()) + ",";
+        json += "\"sketch_size\":" + String(ESP.getSketchSize()) + ",";
+        json += "\"sketch_free\":" + String(ESP.getFreeSketchSpace()) + ",";
+        json += "\"spiffs_total\":" + String(SPIFFS.totalBytes()) + ",";
+        json += "\"spiffs_used\":" + String(SPIFFS.usedBytes());
         json += "}";
         server.send(200, "application/json", json);
     });

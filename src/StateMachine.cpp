@@ -7,8 +7,10 @@
 
 #include "Logger.h"
 #include "WebManager.h"
+#include "VehicleStatus.h"
 
 extern WebManager webManager;
+extern VehicleStatusManager vehicleStatus;
 #if ENABLE_BLE
 extern BLEManager bleManager;
 #endif
@@ -97,7 +99,8 @@ void StateMachine::update() {
     }
 #endif
 
-    if (relay->isEngineRunning() && pendingSecondaryAuth) {
+    // V1.1: Use VehicleStatusManager for engine state instead of RelayManager
+    if (vehicleStatus.isEngineRunning() && pendingSecondaryAuth) {
         const bool isInNeutral = (digitalRead(PIN_NEUTRAL) == LOW);
         if (!isInNeutral) {
             Logger::error("[AntiTheft] unauthorized gear switch, stopping engine");

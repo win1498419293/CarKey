@@ -41,6 +41,8 @@
 // --- Vehicle state sensor pins ---
 extern const int PIN_HANDBRAKE;
 extern const int PIN_NEUTRAL;
+extern const int PIN_ACC;
+extern const int PIN_DOOR;
 extern const int PIN_IGN;
 extern const int PIN_START;
 extern const int PIN_HORN;

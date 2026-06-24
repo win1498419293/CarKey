@@ -82,13 +82,17 @@ bool authMethodBLE = true;
 // S3: GPIO22-25 not available, OPI PSRAM on GPIO26,30-38
 extern const int PIN_HANDBRAKE = 41;
 extern const int PIN_NEUTRAL = 42;
+extern const int PIN_ACC = 8;         // V1.1: ACC detect (S3 alternate)
+extern const int PIN_DOOR = 9;        // V1.1: driver door (S3 alternate)
 extern const int PIN_IGN = 6;
 extern const int PIN_START = 40;
 extern const int PIN_HORN = 7;
 #else
-// ESP32: legacy pins
-extern const int PIN_HANDBRAKE = 32;
+// ESP32: legacy pins (V1.1 remap)
+extern const int PIN_HANDBRAKE = 34;  // V1.1: moved from GPIO32 to GPIO34
 extern const int PIN_NEUTRAL = 33;
+extern const int PIN_ACC = 32;        // V1.1: ACC detect (was handbrake)
+extern const int PIN_DOOR = 35;       // V1.1: driver door
 extern const int PIN_IGN = 25;
 extern const int PIN_START = 26;
 extern const int PIN_HORN = 27;

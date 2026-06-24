@@ -3,6 +3,7 @@
 #include <soc/soc.h>
 
 #include "BatteryVoltage.h"
+#include "VehicleStatus.h"
 #include "Config.h"
 #if ENABLE_BLE
 #include "BLEManager.h"
@@ -38,6 +39,7 @@ void setup() {
     pinMode(PIN_NEUTRAL, INPUT_PULLUP);
 
     batteryVoltage.init();
+    vehicleStatus.init();
     relayManager.init();
 #if ENABLE_BLE
     bleManager.init();

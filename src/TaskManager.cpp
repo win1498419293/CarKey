@@ -6,6 +6,7 @@
 
 #include "AuthManager.h"
 #include "BatteryVoltage.h"
+#include "VehicleStatus.h"
 #include "Config.h"
 #include "Logger.h"
 #include "Metrics.h"
@@ -135,13 +136,25 @@ void handleVehicleCommand(const VehicleCommand& cmd) {
                 return;
             }
             if (relayManager.startEngine()) {
-                Metrics::onRemoteStartResult(true, "ok");
-                stateMachine.requireSecondaryAuth();
+                // V1.1: Verify engine actually started
+                bool started = vehicleStatus.verifyEngineStart();
+                if (started) {
+                    Metrics::onRemoteStartResult(true, "ok");
+                    stateMachine.requireSecondaryAuth();
 #if ENABLE_CELLULAR
-                if (cmd.type == VehicleCommandType::VEHICLE_CMD_START_FROM_MQTT) {
-                    cellularManager.publishStatus("ENGINE_STARTED_OK");
-                }
+                    if (cmd.type == VehicleCommandType::VEHICLE_CMD_START_FROM_MQTT) {
+                        cellularManager.publishStatus("ENGINE_STARTED_OK");
+                    }
 #endif
+                } else {
+                    Metrics::onRemoteStartResult(false, "engine_failed");
+                    relayManager.stopEngine();
+#if ENABLE_CELLULAR
+                    if (cmd.type == VehicleCommandType::VEHICLE_CMD_START_FROM_MQTT) {
+                        cellularManager.publishStatus("ENGINE_START_FAILED");
+                    }
+#endif
+                }
             } else {
                 Metrics::onRemoteStartResult(false, "relay_reject");
             }
@@ -291,6 +304,7 @@ void sensorTask(void*) {
     for (;;) {
         batteryVoltage.update();
         relayManager.update();
+        vehicleStatus.update();
         StatusLight::update();
         DisplayManager::update();
         touch(TASK_SENSOR);

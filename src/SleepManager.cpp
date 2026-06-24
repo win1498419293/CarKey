@@ -2,12 +2,14 @@
 #include "Config.h"
 #include "Logger.h"
 #include "RelayManager.h"
+#include "VehicleStatus.h"
 #include "StateMachine.h"
 #if ENABLE_BLE
 #include "BLEManager.h"
 #endif
 #include <esp_sleep.h>
 #include <esp_wifi.h>
+#include <WiFi.h>
 
 SleepManager sleepManager;
 
@@ -23,12 +25,13 @@ void SleepManager::init() {
 
 static bool systemBusy() {
     extern RelayManager relayManager;
+extern VehicleStatusManager vehicleStatus;
     extern StateMachine stateMachine;
 #if ENABLE_BLE
     extern BLEManager bleManager;
 #endif
     // Engine running = stay awake
-    if (relayManager.isEngineRunning()) return true;
+    if (vehicleStatus.isEngineRunning()) return true;
     // BLE authorized device nearby = stay awake
 #if ENABLE_BLE
     if (bleManager.isAuthorizedDeviceConnected()) return true;
