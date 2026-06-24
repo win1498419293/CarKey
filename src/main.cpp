@@ -27,7 +27,8 @@ void setup() {
     delay(3000);
     Serial.begin(115200); delay(100);
 
-#ifdef CONFIG_IDF_TARGET_ESP32
+// V1.1: RTC_CNTL_BROWN_OUT_REG removed in newer framework; brownout handled via sdkconfig
+#if defined(RTC_CNTL_BROWN_OUT_REG) && defined(CONFIG_IDF_TARGET_ESP32)
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 #endif
 

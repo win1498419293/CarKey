@@ -25,6 +25,7 @@ extern BLEManager bleManager;
 #endif
 
 WebServer server(80);
+WebSocketsServer webSocket(81);
 
 namespace {
 
@@ -300,6 +301,11 @@ void WebManager::init() {
     if (!g_serverStarted) {
     WiFi.mode(WIFI_STA);  // Initialize TCP/IP stack, then WiFi
         server.begin();
+    webSocket.begin();
+    webSocket.onEvent([this](uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
+        handleWebSocketEvent(num, type, payload, length);
+    });
+    Logger::info("[WebManager] WebSocket server started on port 81");
         g_serverStarted = true;
         Logger::info("[WebManager] HTTP server started");
     }
@@ -340,8 +346,49 @@ void WebManager::init() {
     server.begin();
 }
 
+
+// ===== V6 WebSocket =====
+
+void WebManager::handleWebSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
+    switch (type) {
+        case WStype_DISCONNECTED:
+            break;
+        case WStype_CONNECTED:
+            Logger::info("[WS] Client connected: " + String(num));
+            // Send current status immediately on connect
+            {
+                String status = vehicleStatus.toJson();
+                webSocket.sendTXT(num, status);
+            }
+            break;
+        case WStype_TEXT:
+            // Handle client messages (e.g., ping)
+            if (strcmp((const char*)payload, "ping") == 0) {
+                webSocket.sendTXT(num, "pong");
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void WebManager::broadcastStatus(const String& json) {
+    String payload = json;
+    webSocket.broadcastTXT(payload);
+}
+
+void WebManager::wsLoop() {
+    webSocket.loop();
+}
+
 void WebManager::setupRoutes() {
     // Root route - serve embedded page as SPIFFS fallback
+    server.on("/manifest.json", []() {
+        sendNoCacheHeaders();
+        server.send(200, "application/json",
+            "{\"name\":\"CarKey V6\",\"short_name\":\"CarKey\",\"start_url\":\"/\",\"display\":\"standalone\",\"background_color\":\"#060B14\",\"theme_color\":\"#060B14\",\"icons\":[{\"src\":\"data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>&#9889;</text></svg>\",\"sizes\":\"any\",\"type\":\"image/svg+xml\"}]}");
+    });
+
     server.on("/", []() {
         sendNoCacheHeaders();
         server.send_P(200, "text/html; charset=utf-8", kEmbeddedIndexPage);
@@ -435,6 +482,8 @@ void WebManager::setupRoutes() {
         String json = "{";
         json += "\"voltage\":" + String(currentVoltage, 1) + ",";
         json += "\"low_battery\":" + String(lowBattery ? "true" : "false") + ",";
+        json += "\"batteryVoltage\":" + String(currentVoltage, 1) + ",";
+        json += "\"batteryHealth\":\"" + String(vehicleStatus.getBatteryHealthStr()) + "\",";
         json += "\"handbrake\":" + String(isHandbrakePulled ? "true" : "false") + ",";
         json += "\"gear\":\"" + gearState + "\",";
         json += "\"engine_running\":" + String(vehicleStatus.isEngineRunning() ? "true" : "false") + ",";
@@ -744,6 +793,7 @@ void WebManager::handle() {
         if (webAccessLocked) {
             // RFManager and NFC query coordination when WiFi is connected
             server.handleClient();
+            webSocket.loop();
             return;
         }
 

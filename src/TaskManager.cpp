@@ -17,6 +17,7 @@
 #include "DisplayManager.h"
 #include "StateMachine.h"
 #include "WebManager.h"
+#include "VehicleStatus.h"
 #if ENABLE_BLE
 #include "BLEManager.h"
 #endif
@@ -307,6 +308,46 @@ void sensorTask(void*) {
         vehicleStatus.update();
         StatusLight::update();
         DisplayManager::update();
+        // V6: WebSocket status broadcast every ~2s (full status incl BLE/NFC)
+        {
+            static unsigned long lastBroadcastMs = 0;
+            unsigned long now = millis();
+            if (now - lastBroadcastMs >= 2000) {
+                lastBroadcastMs = now;
+                String json = "{";
+                // VehicleStatus fields (engine, battery, acc, brake, door)
+                json += "\"engineRunning\":" + String(vehicleStatus.isEngineRunning() ? "true" : "false") + ",";
+                float v = batteryVoltage.hasReading() ? batteryVoltage.getVoltage() : 0.0f;
+                json += "\"batteryVoltage\":" + String(v, 1) + ",";
+                json += "\"voltage\":" + String(v, 1) + ",";
+                json += "\"batteryHealth\":\"" + String(vehicleStatus.getBatteryHealthStr()) + "\",";
+                json += "\"acc\":" + String(vehicleStatus.isAccOn() ? "true" : "false") + ",";
+                json += "\"handBrake\":" + String(vehicleStatus.isHandBrakeEngaged() ? "true" : "false") + ",";
+                json += "\"handbrake\":" + String(vehicleStatus.isHandBrakeEngaged() ? "true" : "false") + ",";
+                json += "\"driverDoorOpen\":" + String(vehicleStatus.isDriverDoorOpen() ? "true" : "false") + ",";
+                // Gear
+                bool isNeutral = (digitalRead(PIN_NEUTRAL) == LOW);
+                json += "\"gear\":\"" + String(isNeutral ? "N" : "D") + "\",";
+                // Config
+                json += "\"config_locked\":" + String(webAccessLocked ? "true" : "false") + ",";
+                json += "\"ble_scan\":" + String(bleScanEnabled ? "true" : "false") + ",";
+                json += "\"nfc_scan\":" + String(authMethodNFC ? "true" : "false") + ",";
+                // BLE
+#if ENABLE_BLE
+                json += "\"ble_authorized\":" + String(bleManager.isAuthorizedDeviceConnected() ? "true" : "false") + ",";
+                json += "\"ble_auth_valid\":" + String(bleManager.isAuthorizedDeviceConnected() ? "true" : "false") + ",";
+                json += "\"ble_scanning\":" + String(bleManager.isScanningBLE() ? "true" : "false") + ",";
+                json += "\"ble_last_seen\":" + String(bleManager.getLastSeenSec());
+#else
+                json += "\"ble_authorized\":false,";
+                json += "\"ble_auth_valid\":false,";
+                json += "\"ble_scanning\":false,";
+                json += "\"ble_last_seen\":-1";
+#endif
+                json += "}";
+                webManager.broadcastStatus(json);
+            }
+        }
         touch(TASK_SENSOR);
         vTaskDelay(pdMS_TO_TICKS(80));
     }
