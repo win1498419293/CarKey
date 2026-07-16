@@ -1,4 +1,4 @@
-﻿#include "MqttManager.h"
+#include "MqttManager.h"
 #include "Logger.h"
 #include "Metrics.h"
 #include "BatteryVoltage.h"
@@ -109,7 +109,7 @@ void MqttManager::update() {
             if (now - _lastReconnectAttempt >= _reconnectDelayMs) {
                 _lastReconnectAttempt = now;
                 _reconnectDelayMs = min(_reconnectDelayMs * 2UL, 120000UL);
-                Metrics::onMqttReconnectAttempt();
+                // Metrics::onMqttReconnectAttempt();
                 Logger::info("[MQTT] connecting...");
                 if (_mqttClient.connect(mqtt_client_id)) {
                     _mqttClient.subscribe(topic_sub);
@@ -117,7 +117,7 @@ void MqttManager::update() {
                     _reconnectDelayMs = 5000;
                     _offlineSinceMs = 0;
                     Logger::info(String("[MQTT] online (") + via + ")");
-                    Metrics::onMqttReconnectResult(true, "ok");
+                    // Metrics::onMqttReconnectResult(true, "ok");
                 }
             }
         }

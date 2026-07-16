@@ -1,1 +1,365 @@
-﻿<html><head><meta http-equiv="refresh" content="0;url=/fallback"></head></html>
+﻿<!DOCTYPE html>
+<html lang="zh" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#060B14">
+<title>CarKey V7</title>
+<style>
+:root{
+--bg:#060B14;--card:#101827;--border:#1D2A44;--accent:#00D4FF;--green:#00FF99;
+--warn:#FFB347;--red:#FF5F56;--txt:#FFFFFF;--sub:#8B98B8;
+--glow-accent:rgba(0,212,255,0.25);--glow-green:rgba(0,255,153,0.3);
+--glow-red:rgba(255,95,86,0.25);--radius:20px;--radius-sm:12px;
+--glass-bg:rgba(16,24,39,0.7);--glass-border:rgba(255,255,255,0.05);--glass-shadow:0 8px 32px rgba(0,0,0,0.4);
+}
+[data-theme="light"]{
+--bg:#F0F2F5;--card:#FFFFFF;--border:#D1D5DB;--accent:#0099CC;--green:#00AA55;
+--warn:#E69500;--red:#DD3333;--txt:#1A1A2E;--sub:#6B7280;
+--glow-accent:rgba(0,153,204,0.2);--glow-green:rgba(0,170,85,0.2);--glow-red:rgba(221,51,51,0.2);
+--glass-bg:rgba(255,255,255,0.85);--glass-border:rgba(0,0,0,0.08);--glass-shadow:0 4px 24px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--txt);transition:background 0.4s,color 0.4s;min-height:100vh;max-width:540px;margin:0 auto;padding:16px 14px 24px;overflow-x:hidden}
+.glass{background:var(--glass-bg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);border-radius:var(--radius)}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.logo{font-size:20px;font-weight:800;letter-spacing:3px;background:linear-gradient(135deg,var(--accent),#0099CC);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.settings-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--sub);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s}
+.settings-btn:active{background:rgba(0,212,255,0.15);color:var(--accent);transform:scale(0.92)}
+.capsules{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.capsule{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,0.08);background:rgba(16,24,39,0.5);color:var(--sub);transition:all 0.4s}
+.capsule .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.capsule.on{border-color:rgba(0,255,153,0.3);color:var(--green)}.capsule.on .dot{box-shadow:0 0 6px var(--green)}
+.capsule.warn{border-color:rgba(255,179,71,0.3);color:var(--warn)}.capsule.warn .dot{box-shadow:0 0 6px var(--warn)}
+.capsule.off{border-color:rgba(255,255,255,0.05);color:var(--sub)}
+.engine-hero{display:flex;flex-direction:column;align-items:center;margin:10px 0 20px}
+.engine-ring{width:160px;height:160px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:3px solid rgba(255,255,255,0.08);transition:all 0.6s cubic-bezier(0.4,0,0.2,1);position:relative}
+.engine-ring.running{border-color:rgba(0,255,153,0.5);box-shadow:0 0 60px var(--glow-green),inset 0 0 40px rgba(0,255,153,0.05)}
+.engine-ring.stopped{border-color:rgba(255,95,86,0.3);box-shadow:0 0 30px rgba(255,95,86,0.1)}
+.engine-ring.starting{border-color:rgba(0,212,255,0.5);box-shadow:0 0 50px var(--glow-accent)}
+.engine-inner{display:flex;flex-direction:column;align-items:center;z-index:1}
+.engine-icon{font-size:36px;margin-bottom:4px;transition:transform 0.5s}
+.engine-label{font-size:11px;letter-spacing:3px;color:var(--sub);margin-bottom:2px}
+.engine-state{font-size:16px;font-weight:800;letter-spacing:2px}
+.engine-ring.running .engine-state{color:var(--green)}
+.engine-ring.stopped .engine-state{color:var(--red)}
+.engine-ring.starting .engine-state{color:var(--accent)}
+.engine-btn-wrap{margin-top:14px}
+.engine-btn{width:130px;height:40px;border-radius:20px;border:none;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.3s;text-transform:uppercase}
+.engine-btn.start{background:linear-gradient(135deg,var(--accent),#0099CC);color:#060B14;box-shadow:0 4px 20px var(--glow-accent)}
+.engine-btn.stop{background:linear-gradient(135deg,var(--red),#cc4444);color:#fff;box-shadow:0 4px 20px var(--glow-red)}
+.engine-btn:active{transform:scale(0.94)}
+.status-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.status-card{padding:12px 10px;display:flex;align-items:center;gap:8px;background:rgba(16,24,39,0.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.05);border-radius:var(--radius-sm);transition:all 0.4s}
+.status-card .sc-icon{font-size:20px;width:28px;text-align:center;flex-shrink:0;transition:all 0.4s}
+.status-card .sc-info{display:flex;flex-direction:column;gap:1px;min-width:0}
+.status-card .sc-val{font-size:12px;font-weight:700}
+.status-card .sc-sub{font-size:9px;color:var(--sub)}
+.status-card.on{border-color:rgba(0,255,153,0.2);box-shadow:0 0 12px rgba(0,255,153,0.05)}
+.status-card.on .sc-val{color:var(--green)}
+.status-card.off{border-color:rgba(255,95,86,0.15)}.status-card.off .sc-val{color:var(--red)}
+.status-card.warn-card{border-color:rgba(255,179,71,0.2)}.status-card.warn-card .sc-val{color:var(--warn)}
+.sys-bar{width:100%;height:2px;border-radius:1px;background:rgba(255,255,255,0.05);margin-top:3px;overflow:hidden}
+.sys-bar-fill{height:100%;border-radius:1px;transition:width 0.6s}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.action-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 12px;border-radius:var(--radius-sm);background:rgba(16,24,39,0.5);border:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:all 0.3s;color:var(--txt)}
+.action-btn .act-icon{font-size:24px;transition:transform 0.3s}
+.action-btn .act-label{font-size:11px;font-weight:600;letter-spacing:1px}
+.action-btn:active{transform:scale(0.94);background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2)}
+.tabs{display:flex;gap:2px;margin-bottom:14px;background:rgba(16,24,39,0.4);border-radius:12px;padding:3px;overflow-x:auto}
+.tab-btn{flex:1;padding:8px 4px;border:none;border-radius:10px;background:transparent;color:var(--sub);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.3s;white-space:nowrap;min-width:50px}
+.tab-btn.active{background:rgba(0,212,255,0.12);color:var(--accent)}
+.tab-content{display:none}.tab-content.active{display:block;animation:fadeIn 0.4s ease-out}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.history-subtabs{display:flex;gap:4px;margin-bottom:10px;overflow-x:auto}
+.history-subtab{padding:6px 14px;border-radius:16px;font-size:10px;font-weight:600;border:1px solid rgba(255,255,255,0.08);background:rgba(16,24,39,0.5);color:var(--sub);cursor:pointer;white-space:nowrap;transition:all 0.3s}
+.history-subtab.active{background:rgba(0,212,255,0.12);border-color:var(--accent);color:var(--accent)}
+.history-list{max-height:320px;overflow-y:auto;padding:4px 0}
+.history-item{display:flex;gap:8px;padding:8px 10px;font-size:10px;border-bottom:1px solid rgba(255,255,255,0.03)}
+.history-item .h-time{color:var(--sub);white-space:nowrap;flex-shrink:0;min-width:48px;font-variant-numeric:tabular-nums}
+.history-item .h-msg{flex:1;min-width:0;word-break:break-all}
+.history-item.ok .h-msg{color:var(--green)}
+.history-item.fail .h-msg{color:var(--red)}
+.history-empty{padding:24px;text-align:center;color:var(--sub);font-size:11px}
+.form-group{margin-bottom:10px}
+.form-group label{display:block;font-size:10px;color:var(--sub);margin-bottom:4px;letter-spacing:1px}
+.form-input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--txt);font-size:13px;outline:none;transition:border 0.3s}
+.form-input:focus{border-color:var(--accent)}
+.form-btn{padding:8px 20px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.3s}
+.form-btn.accent{background:var(--accent);color:#060B14}
+.form-btn.accent:active{transform:scale(0.94)}
+.ota-section{margin-top:8px}
+.ota-title{font-size:11px;color:var(--accent);font-weight:600;margin-bottom:8px}
+.ota-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.ota-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.04);color:var(--txt);font-size:11px;cursor:pointer;transition:all 0.3s}
+.ota-btn.primary{background:var(--accent);border:none;color:#060B14}
+.ota-btn:active{transform:scale(0.94)}
+.ota-progress{margin-top:6px;display:none}
+.ota-progress-bar{height:4px;border-radius:2px;background:rgba(255,255,255,0.08);overflow:hidden}
+.ota-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width 0.3s}
+.toast-container{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9998;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:10px 20px;border-radius:12px;background:rgba(16,24,39,0.95);border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);font-size:12px;font-weight:600;animation:toastIn 0.4s ease-out,toastOut 0.3s 2.5s ease-in forwards;pointer-events:auto;white-space:nowrap}
+.toast.ok{border-left:3px solid var(--green)}.toast.warn{border-left:3px solid var(--warn)}.toast.err{border-left:3px solid var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateY(-20px)}}
+.ws-indicator{width:8px;height:8px;border-radius:50%;background:var(--sub);transition:background 0.3s}
+.ws-indicator.live{background:var(--green);box-shadow:0 0 6px var(--green)}
+.header-right{display:flex;align-items:center;gap:10px}
+.theme-btn{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--sub);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+<div class="header fade-in">
+<div class="logo">CARKEY <span style="font-size:10px;font-weight:400;opacity:0.5">V7</span></div>
+<div class="header-right">
+<div class="ws-indicator" id="wsDot" title="WebSocket"></div>
+<button class="theme-btn" onclick="toggleTheme()" title="Theme">&#9788;</button>
+<button class="settings-btn" onclick="switchTab('settings')">&#9881;</button>
+</div>
+</div>
+
+<!-- Engine Hero -->
+<div class="engine-hero fade-in">
+<div class="engine-ring stopped" id="engineRing">
+<div class="engine-inner">
+<div class="engine-icon" id="engineIcon">&#128663;</div>
+<div class="engine-label">ENGINE</div>
+<div class="engine-state" id="engineState">STOPPED</div>
+</div>
+</div>
+<div class="engine-btn-wrap">
+<button class="engine-btn start" id="engineBtn" onclick="toggleEngine()">START</button>
+</div>
+</div>
+
+<!-- Capsules -->
+<div class="capsules fade-in">
+<span class="capsule off" id="capAcc"><span class="dot"></span>ACC</span>
+<span class="capsule off" id="capPark"><span class="dot"></span>PARK</span>
+<span class="capsule off" id="capDoor"><span class="dot"></span>DOOR</span>
+<span class="capsule off" id="capGear"><span class="dot"></span>GEAR</span>
+<span class="capsule off" id="capLock"><span class="dot"></span>LOCK</span>
+</div>
+
+<!-- System Status Grid (3x3) -->
+<div class="status-grid" id="sysGrid">
+<div class="status-card off" id="scBatteryV"><div class="sc-icon">&#9889;</div><div class="sc-info"><div class="sc-val" id="vBatteryV">--V</div><div class="sc-sub">Battery</div></div></div>
+<div class="status-card off" id="scWiFi"><div class="sc-icon">&#127760;</div><div class="sc-info"><div class="sc-val" id="vWiFi">--dBm</div><div class="sc-sub">WiFi RSSI</div></div></div>
+<div class="status-card off" id="scMqtt"><div class="sc-icon">&#128225;</div><div class="sc-info"><div class="sc-val" id="vMqtt">--</div><div class="sc-sub">MQTT</div></div></div>
+<div class="status-card off" id="scCpu"><div class="sc-icon">&#9881;</div><div class="sc-info"><div class="sc-val" id="vCpu">--KB</div><div class="sc-sub">Free Heap</div><div class="sys-bar"><div class="sys-bar-fill" id="barCpu" style="width:0%;background:var(--accent)"></div></div></div></div>
+<div class="status-card off" id="scHeap"><div class="sc-icon">&#128452;</div><div class="sc-info"><div class="sc-val" id="vHeap">--KB</div><div class="sc-sub">Min Heap</div><div class="sys-bar"><div class="sys-bar-fill" id="barHeap" style="width:0%;background:var(--warn)"></div></div></div></div>
+<div class="status-card off" id="scBle"><div class="sc-icon">&#128243;</div><div class="sc-info"><div class="sc-val" id="vBle">--</div><div class="sc-sub">BLE</div></div></div>
+<div class="status-card off" id="scNfc"><div class="sc-icon">&#128179;</div><div class="sc-info"><div class="sc-val" id="vNfc">--</div><div class="sc-sub">NFC</div></div></div>
+<div class="status-card off" id="scOta"><div class="sc-icon">&#128190;</div><div class="sc-info"><div class="sc-val" id="vOta">--</div><div class="sc-sub">OTA</div></div></div>
+<div class="status-card off" id="scRelay"><div class="sc-icon">&#128268;</div><div class="sc-info"><div class="sc-val" id="vRelay">--</div><div class="sc-sub">Relay</div></div></div>
+</div>
+
+<!-- Action Buttons -->
+<div class="actions fade-in">
+<button class="action-btn" onclick="doLock()"><div class="act-icon">&#128274;</div><div class="act-label">Lock</div></button>
+<button class="action-btn" onclick="doUnlock()"><div class="act-icon">&#128275;</div><div class="act-label">Unlock</div></button>
+</div>
+
+<!-- Tabs -->
+<div class="tabs fade-in">
+<button class="tab-btn active" onclick="switchTab('dashboard')">&#127968; Home</button>
+<button class="tab-btn" onclick="switchTab('history')">&#128196; History</button>
+<button class="tab-btn" onclick="switchTab('settings')">&#9881; Settings</button>
+<button class="tab-btn" onclick="switchTab('ota')">&#128190; OTA</button>
+</div>
+
+<!-- Dashboard Tab (default visible) -->
+<div id="tab-dashboard" class="tab-content active">
+<div class="glass" style="padding:12px 14px;margin-bottom:8px;font-size:10px;color:var(--sub)">
+<span>IP: </span><span id="vIP">--</span>&nbsp;&nbsp;
+<span>Build: </span><span id="vBuild">--</span>&nbsp;&nbsp;
+<span>Uptime: </span><span id="vUptime">--</span>
+</div>
+</div>
+
+<!-- History Tab -->
+<div id="tab-history" class="tab-content">
+<div class="history-subtabs" id="histSubtabs">
+<button class="history-subtab active" onclick="loadHistory('logs')">&#128172; Logs</button>
+<button class="history-subtab" onclick="loadHistory('auth')">&#128273; Auth</button>
+<button class="history-subtab" onclick="loadHistory('start')">&#128663; Starts</button>
+<button class="history-subtab" onclick="loadHistory('ota')">&#128190; OTA</button>
+</div>
+<div class="history-list" id="histList" style="max-height:400px"><div class="history-empty">Select a category above</div></div>
+</div>
+
+<!-- Settings Tab -->
+<div id="tab-settings" class="tab-content">
+<div class="form-group"><label>WiFi SSID</label><input class="form-input" id="setSSID" placeholder="WiFi SSID"></div>
+<div class="form-group"><label>WiFi Password</label><input class="form-input" id="setPass" type="password" placeholder="Password"></div>
+<div class="form-group"><label>Bluetooth Name</label><input class="form-input" id="setBTName" placeholder="BLE Name"></div>
+<div class="form-group"><label>Engine Start Password</label><input class="form-input" id="setPwd" type="password" placeholder="Password"></div>
+<div class="form-group" style="display:flex;align-items:center;gap:10px"><label style="margin:0">Security Auth</label><input type="checkbox" id="setSecAuth"></div>
+<div class="form-group" style="display:flex;align-items:center;gap:10px"><label style="margin:0">BLE Scan</label><input type="checkbox" id="setBleScan"></div>
+<div class="form-group" style="display:flex;align-items:center;gap:10px"><label style="margin:0">NFC Auth</label><input type="checkbox" id="setNfcAuth"></div>
+<button class="form-btn accent" onclick="saveConfig()">Save Settings</button>
+<div id="settingsMsg"></div>
+</div>
+
+<!-- OTA Tab -->
+<div id="tab-ota" class="tab-content">
+<div class="ota-section"><div class="ota-title">&#128190; OTA Update</div><div class="ota-ver" id="otaVer">Version: --</div>
+<div class="ota-row"><button class="ota-btn primary" onclick="startOtaUpload()">Upload .bin</button><input type="file" id="otaFileInput" accept=".bin" style="display:none" onchange="handleOtaFile()"></div>
+<div class="ota-row"><input class="form-input" id="otaUrl" placeholder="Firmware URL" style="flex:1"><button class="ota-btn primary" onclick="startOtaDownload()">Download</button></div>
+<div class="ota-row"><button class="ota-btn" onclick="doRollback()">Rollback</button></div>
+<div class="ota-progress" id="otaProgressWrap"><div class="ota-progress-bar"><div class="ota-progress-fill" id="otaProgressFill" style="width:0%"></div></div><div style="font-size:10px;margin-top:4px;color:var(--sub)" id="otaProgressText">0%</div></div></div>
+</div>
+
+<script>
+var E=function(id){return document.getElementById(id)};
+var ws,wsLive=false,pwd=localStorage.getItem('ckPwd')||'';
+var histType='logs';
+
+function toast(msg,type){var c=E('toastContainer');var d=document.createElement('div');d.className='toast '+(type||'');d.textContent=msg;c.appendChild(d);setTimeout(function(){d.remove()},2800)}
+
+function toggleTheme(){var t=document.documentElement.dataset.theme;t=t==='light'?'dark':'light';document.documentElement.dataset.theme=t;localStorage.setItem('ckTheme',t)}
+
+function switchTab(name){
+document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+event.target.classList.add('active');
+document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active')});
+E('tab-'+name).classList.add('active');
+if(name==='history') loadHistory(histType);
+}
+
+function doLock(){fetch('/api/lock_toggle').then(function(r){return r.json()}).then(function(d){toast(d.msg||'Lock toggled','ok')}).catch(function(){toast('Lock failed','err')})}
+function doUnlock(){fetch('/api/unlock_toggle').then(function(r){return r.json()}).then(function(d){toast(d.msg||'Unlock toggled','ok')}).catch(function(){toast('Unlock failed','err')})}
+
+// Engine control
+var engineRunning=false;
+function toggleEngine(){
+var btn=E('engineBtn'),ring=E('engineRing'),icon=E('engineIcon'),st=E('engineState');
+if(engineRunning){stopEngine()}else{startEngine()}
+}
+function startEngine(){
+var ep=pwd||prompt('Engine start password:','');
+if(!ep){toast('Password required','warn');return}
+E('engineRing').className='engine-ring starting';E('engineState').textContent='STARTING';E('engineIcon').textContent='\u{1F4A8}';
+fetch('/api/start_engine?pwd='+encodeURIComponent(ep)).then(function(r){return r.json()}).then(function(d){
+if(d.ok||d.success){engineRunning=true;E('engineRing').className='engine-ring running';E('engineState').textContent='RUNNING';E('engineIcon').textContent='\u{1F525}';E('engineBtn').textContent='STOP';E('engineBtn').className='engine-btn stop';toast('Engine started!','ok')}
+else{E('engineRing').className='engine-ring stopped';E('engineState').textContent='STOPPED';E('engineIcon').textContent='\u{1F663}';toast('Start failed: '+(d.msg||d.message||'unknown'),'err')}
+}).catch(function(){E('engineRing').className='engine-ring stopped';E('engineState').textContent='STOPPED';E('engineIcon').textContent='\u{1F663}';toast('Start failed','err')})
+}
+function stopEngine(){
+var ep=pwd||prompt('Engine stop password:','');
+if(!ep){toast('Password required','warn');return}
+fetch('/api/stop_engine?pwd='+encodeURIComponent(ep)).then(function(r){return r.json()}).then(function(d){
+if(d.ok||d.success){engineRunning=false;E('engineRing').className='engine-ring stopped';E('engineState').textContent='STOPPED';E('engineIcon').textContent='\u{1F663}';E('engineBtn').textContent='START';E('engineBtn').className='engine-btn start';toast('Engine stopped','ok')}
+else{toast('Stop failed: '+(d.msg||d.message||'unknown'),'err')}
+}).catch(function(){toast('Stop failed','err')})
+}
+
+// History
+function loadHistory(t){
+histType=t;
+var btns=document.querySelectorAll('#histSubtabs .history-subtab');
+btns.forEach(function(b){b.classList.remove('active')});
+var btn=document.querySelector('#histSubtabs .history-subtab:nth-child('+({logs:1,auth:2,start:3,ota:4}[t])+')');
+if(btn)btn.classList.add('active');
+event&&event.target&&event.target.classList.add('active');
+fetch('/api/history/'+t).then(function(r){return r.json()}).then(function(arr){
+var h=E('histList');
+if(!arr||arr.length===0){h.innerHTML='<div class="history-empty">No records yet</div>';return}
+var out='';
+for(var i=arr.length-1;i>=0;i--){
+var e=arr[i];
+out+='<div class="history-item '+(e.ok?'ok':'fail')+'"><div class="h-time">'+e.time+'</div><div class="h-msg">'+e.msg+'</div></div>';
+}
+h.innerHTML=out;
+}).catch(function(){E('histList').innerHTML='<div class="history-empty">Failed to load</div>'})
+}
+
+// Status update via WebSocket
+function updateStatus(d){
+// Engine
+try{if(d.engineRunning){engineRunning=true;E('engineRing').className='engine-ring running';E('engineState').textContent='RUNNING';E('engineIcon').textContent='\u{1F525}';E('engineBtn').textContent='STOP';E('engineBtn').className='engine-btn stop'}
+else{engineRunning=false;E('engineRing').className='engine-ring stopped';E('engineState').textContent='STOPPED';E('engineIcon').textContent='\u{1F663}';E('engineBtn').textContent='START';E('engineBtn').className='engine-btn start'}}catch(e){}
+
+// Battery
+try{var bv=parseFloat(d.batteryVoltage||d.voltage||0);E('vBatteryV').innerHTML=bv.toFixed(1)+'V';var scB=document.getElementById('scBatteryV');scB.className='status-card'+(bv>12.2?' on':(bv>11.8?' warn-card':' off'))}catch(e){}
+
+// Capsules
+try{E('capAcc').className='capsule'+(d.acc?' on':' off')}catch(e){}
+try{E('capPark').className='capsule'+(d.handbrake||d.handBrake?' on':' off')}catch(e){}
+try{E('capDoor').className='capsule'+(d.driverDoorOpen?' warn':' off')}catch(e){}
+try{E('capGear').innerHTML='<span class="dot"></span>'+(d.gear||'N')}catch(e){}
+try{E('capLock').className='capsule'+(d.config_locked||d.locked?' warn':' on');E('capLock').innerHTML='<span class="dot"></span>'+(d.config_locked||d.locked?'CFG LCK':'UNLOCK')}catch(e){}
+
+// WiFi RSSI
+try{E('vWiFi').innerHTML=(d.wifi_rssi||-120)+'dBm';var sw=document.getElementById('scWiFi');sw.className='status-card'+(d.wifi_rssi>-70?' on':(d.wifi_rssi>-90?' warn-card':' off'))}catch(e){}
+
+// MQTT
+try{E('vMqtt').innerHTML=d.mqtt_connected?'ONLINE':'OFFLINE';var sm=document.getElementById('scMqtt');sm.className='status-card'+(d.mqtt_connected?' on':' off')}catch(e){}
+
+// CPU / Heap
+try{var hf=((d.heap_free||0)/1024).toFixed(0);E('vCpu').innerHTML=hf+'KB';E('barCpu').style.width=Math.min(100,(hf/8000*100))+'%'}catch(e){}
+try{var hm=((d.heap_min_free||0)/1024).toFixed(0);E('vHeap').innerHTML=hm+'KB';E('barHeap').style.width=Math.min(100,(hm/8000*100))+'%'}catch(e){}
+
+// BLE
+try{E('vBle').innerHTML=d.ble_scanning?'SCAN':(d.ble_authorized?'AUTH':'IDLE');var sb=document.getElementById('scBle');sb.className='status-card'+(d.ble_authorized?' on':(d.ble_scanning?' warn-card':' off'))}catch(e){}
+
+// NFC
+try{E('vNfc').innerHTML=d.nfc_ready?(d.nfc_scanning?'SCAN':'RDY'):'OFF';var sn=document.getElementById('scNfc');sn.className='status-card'+(d.nfc_ready?' on':' off')}catch(e){}
+
+// OTA
+try{E('vOta').innerHTML=d.ota_status||'idle';var so=document.getElementById('scOta');so.className='status-card'+(d.ota_status==='complete'?' on':' off')}catch(e){}
+
+// Relay
+try{E('vRelay').innerHTML=d.relay_engine?'ON':'OFF';var sr=document.getElementById('scRelay');sr.className='status-card'+(d.relay_engine?' on':' off')}catch(e){}
+
+// Info bar
+try{E('vIP').textContent=d.ip||'--'}catch(e){}
+try{E('vBuild').textContent=d.build_stamp||'--'}catch(e){}
+try{E('vUptime').textContent=formatUptime(d.uptime||0)}catch(e){}
+try{E('otaVer').textContent='Version: '+(d.build_stamp||'--')}catch(e){}
+}
+
+function formatUptime(s){var m=Math.floor(s/60),h=Math.floor(m/60);return(h>0?h+'h ':'')+(m%60)+'m'}
+
+// Settings
+function saveConfig(){
+var data={};
+data.ssid=E('setSSID').value;data.wifi_pass=E('setPass').value;
+data.bt_name=E('setBTName').value;data.pwd=E('setPwd').value;
+data.sec_auth=E('setSecAuth').checked;data.ble_scan=E('setBleScan').checked;
+data.nfc_scan=E('setNfcAuth').checked;
+if(data.pwd)localStorage.setItem('ckPwd',data.pwd);pwd=data.pwd;
+fetch('/api/update_config',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:Object.keys(data).map(function(k){return k+'='+encodeURIComponent(data[k])}).join('&')}).then(function(r){return r.text()}).then(function(t){toast('Saved!','ok');E('settingsMsg').textContent=''});}
+function loadConfig(){
+fetch('/api/get_config').then(function(r){return r.json()}).then(function(d){
+E('setSSID').value=d.ssid||d.wifi_ssid||'';E('setBTName').value=d.bt_name||'';
+E('setSecAuth').checked=d.sec_auth;E('setBleScan').checked=d.ble_scan;
+E('setNfcAuth').checked=d.nfc_scan;
+})}
+
+// OTA
+function startOtaUpload(){E('otaFileInput').click()}
+function handleOtaFile(){var f=E('otaFileInput').files[0];if(!f)return;if(!f.name.endsWith('.bin')){toast('Need .bin file','err');return}if(!confirm('Upload '+f.name+' ('+(f.size/1024).toFixed(1)+'KB)?'))return;E('otaProgressWrap').style.display='block';var xhr=new XMLHttpRequest();xhr.upload.onprogress=function(e){if(e.lengthComputable){var p=Math.round(e.loaded/e.total*100);E('otaProgressFill').style.width=p+'%';E('otaProgressText').textContent=p+'%'}};xhr.onload=function(){if(xhr.status===200){toast('OTA OK, rebooting...','ok');setTimeout(function(){location.reload()},5000)}else{toast('Upload failed','err');E('otaProgressWrap').style.display='none'}};xhr.open('POST','/api/ota',true);xhr.send(f)}
+function startOtaDownload(){var u=E('otaUrl').value.trim();if(!u){toast('Enter URL','err');return}if(!confirm('Download from '+u+'?'))return;fetch('/api/ota/download',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'url='+encodeURIComponent(u)}).then(function(r){return r.text()}).then(function(t){toast(t,'ok');if(t.indexOf('success')!==-1||t.indexOf('started')!==-1){setTimeout(function(){location.reload()},5000)}})}
+function doRollback(){if(!confirm('Rollback?'))return;fetch('/api/ota/rollback').then(function(r){return r.json()}).then(function(d){if(d.success){toast('Rollback OK','ok');setTimeout(function(){location.reload()},5000)}else{toast('Rollback failed','err')}})}
+
+// WebSocket
+function connectWS(){
+ws=new WebSocket('ws://'+location.hostname+':81/');
+ws.onopen=function(){wsLive=true;E('wsDot').classList.add('live');toast('Connected','ok')};
+ws.onclose=function(){wsLive=false;E('wsDot').classList.remove('live');setTimeout(connectWS,3000)};
+ws.onmessage=function(e){try{var d=JSON.parse(e.data);updateStatus(d)}catch(ex){}}
+}
+
+// Init
+(function(){
+var t=localStorage.getItem('ckTheme')||'dark';document.documentElement.dataset.theme=t;
+connectWS();loadConfig();switchTab('dashboard');
+setInterval(function(){if(!wsLive)connectWS()},10000);
+})();
+</script>
+</body>
+</html>

@@ -14,6 +14,7 @@
 #include "StateMachine.h"
 #include "TaskManager.h"
 #include "WebManager.h"
+#include "HistoryManager.h"
 #include "OTAManager.h"
 #include "StatusLight.h"
 #include "MqttManager.h"
@@ -57,6 +58,7 @@ void setup() {
     nfcManager.init();
 
     TaskManager::begin();
+    historyManager.init();
     StatusLight::setIdle();
     sleepManager.init();
 #if ENABLE_CELLULAR

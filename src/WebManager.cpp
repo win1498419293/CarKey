@@ -1,5 +1,6 @@
 ﻿#include "WebManager.h"
 #include "StatusJsonBuilder.h"
+#include "HistoryManager.h"
 #include "Config.h"
 #include "RelayManager.h"
 #include "StateMachine.h"
@@ -569,6 +570,26 @@ void WebManager::setupRoutes() {
         String logs = takeWebLogBuffer();
         sendNoCacheHeaders();
         server.send(200, "text/plain", logs);
+    // --- History APIs ---
+    server.on("/api/history/logs", []() {
+        sendNoCacheHeaders();
+        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::LOG));
+    });
+
+    server.on("/api/history/auth", []() {
+        sendNoCacheHeaders();
+        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::AUTH));
+    });
+
+    server.on("/api/history/start", []() {
+        sendNoCacheHeaders();
+        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::START));
+    });
+
+    server.on("/api/history/ota", []() {
+        sendNoCacheHeaders();
+        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::OTA));
+    });
     });
 
 
@@ -710,11 +731,6 @@ void WebManager::setupRoutes() {
         server.send(200, "application/json", "{\"success\":true,\"message\":\"Pairing cleared\"}");
     });
 
-    server.on("/system", []() {
-        sendNoCacheHeaders();
-        server.send_P(200, "text/html; charset=utf-8", kSystemPage);
-    });
-    Logger::info("[Web] /system page registered");
 
 
 server.on("/api/system/info", []() {

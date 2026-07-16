@@ -1,4 +1,4 @@
-﻿#include "StatusJsonBuilder.h"
+#include "StatusJsonBuilder.h"
 #include "Logger.h"
 #include "VehicleStatus.h"
 #include "BatteryVoltage.h"
@@ -10,8 +10,13 @@
 #if ENABLE_BLE
 #include "BLEManager.h"
 #endif
+#include "NFCManager.h"
+#include "OTAManager.h"
+#include "RelayManager.h"
+#include "MqttManager.h"
 
 // Local JSON escape helper (same logic as WebManager::jsonEscape)
+
 static String escapeJson(const String& input) {
     String out;
     out.reserve(input.length() + 8);
@@ -50,7 +55,7 @@ String buildBaseStatusString() {
     j += "\"batteryHealth\":\"" + String(vehicleStatus.getBatteryHealthStr()) + "\",";
     j += "\"low_battery\":" + String(batteryVoltage.isLowForRemoteStart() ? "true" : "false") + ",";
 
-    // ACC — critical for Web dashboard
+    // ACC 閳?critical for Web dashboard
     j += "\"acc\":" + String(vehicleStatus.isAccOn() ? "true" : "false") + ",";
 
     // Handbrake, door, gear
@@ -100,7 +105,35 @@ String buildBaseStatusString() {
     j += "\"ble_authorized\":false,\"ble_auth_valid\":false,\"ble_scanning\":false,";
     j += "\"ble_last_seen\":-1,\"ble_ready\":false,\"ble_cooldown_active\":false,\"ble_cooldown_remaining_ms\":0";
 #endif
-    // Note: NO trailing comma or brace — caller adds wrap
+    // --- System status (heap, WiFi, CPU) ---
+    j += ",\"heap_free\":" + String(ESP.getFreeHeap());
+    j += ",\"heap_min_free\":" + String(ESP.getMinFreeHeap());
+    j += ",\"heap_max_alloc\":" + String(ESP.getMaxAllocHeap());
+    j += ",\"wifi_rssi\":" + String(WiFi.status() == WL_CONNECTED ? WiFi.RSSI() : -120);
+
+    // --- NFC status ---
+    j += ",\"nfc_ready\":" + String((!nfcManager.isInitFailed() && nfcManager.isHealthy()) ? "true" : "false");
+    j += ",\"nfc_scanning\":" + String(false ? "true" : "false");
+
+    // --- OTA status ---
+    const char* otaStateStr = "idle";
+    switch (otaManager.getState()) {
+        case OTAState::OTA_COMPLETE_PENDING: otaStateStr = "complete"; break;
+        case OTAState::OTA_IDLE: otaStateStr = "idle"; break;
+        default: otaStateStr = "in_progress"; break;
+    }
+    j += ",\"ota_status\":\"" + String(otaStateStr) + "\"";
+
+    // --- Relay engine status ---
+    j += ",\"relay_engine\":" + String(relayManager.isOn() ? "true" : "false");
+
+    // --- MQTT connection ---
+#if ENABLE_CELLULAR
+    j += ",\"mqtt_connected\":" + String(mqttManager.isConnected() ? "true" : "false");
+#else
+    j += ",\"mqtt_connected\":false";
+#endif
+    // Note: NO trailing comma or brace 閳?caller adds wrap
 
     return j;
 }
@@ -111,7 +144,7 @@ String buildStatusString(BuilderMode mode) {
 
     switch (mode) {
         case BuilderMode::API_OR_WS:
-            // Full status — base has everything
+            // Full status 閳?base has everything
             return "{" + base + "}";
 
         case BuilderMode::CELLULAR_MQTT: {
