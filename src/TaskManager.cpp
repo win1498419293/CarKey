@@ -1,4 +1,4 @@
-#include "TaskManager.h"
+﻿#include "TaskManager.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
@@ -17,12 +17,16 @@
 #include "DisplayManager.h"
 #include "StateMachine.h"
 #include "WebManager.h"
+#include "StatusJsonBuilder.h"
+extern WebManager webManager;
 #include "VehicleStatus.h"
 #if ENABLE_BLE
 #include "BLEManager.h"
 #endif
 #if ENABLE_CELLULAR
 #include "CellularManager.h"
+#include "MqttManager.h"
+#include "NetworkManager.h"
 #include <esp_wifi.h>
 #endif
 
@@ -98,8 +102,8 @@ void softRecoverTask(TaskId id) {
     switch (id) {
 #if ENABLE_CELLULAR
         case TASK_MQTT:
-            Logger::warn("[Watchdog] soft recover MqttTask: reinit cellular manager");
-            cellularManager.init();
+            Logger::warn("[Watchdog] soft recover MqttTask: reinit mqtt manager");
+            mqttManager.init(&networkManager);
             break;
 #endif
 #if ENABLE_BLE
@@ -273,9 +277,14 @@ void webTask(void*) {
 #if ENABLE_CELLULAR
 void mqttTask(void*) {
     touch(TASK_MQTT);
-    cellularManager.init();
+    // cellularManager.init() is already called in setup()
     for (;;) {
+        // update() ??????? AT ????? 15s??
+        // ???????????
+        touch(TASK_MQTT);
         cellularManager.update();
+        networkManager.update();
+        mqttManager.update();
         touch(TASK_MQTT);
         vTaskDelay(pdMS_TO_TICKS(50));
     }
@@ -303,6 +312,7 @@ void bleTask(void*) {
 void sensorTask(void*) {
     touch(TASK_SENSOR);
     for (;;) {
+        touch(TASK_SENSOR);  // feed watchdog every iteration
         batteryVoltage.update();
         relayManager.update();
         vehicleStatus.update();
@@ -314,45 +324,13 @@ void sensorTask(void*) {
             unsigned long now = millis();
             if (now - lastBroadcastMs >= 2000) {
                 lastBroadcastMs = now;
-                String json = "{";
-                // VehicleStatus fields (engine, battery, acc, brake, door)
-                json += "\"engineRunning\":" + String(vehicleStatus.isEngineRunning() ? "true" : "false") + ",";
-                float v = batteryVoltage.hasReading() ? batteryVoltage.getVoltage() : 0.0f;
-                json += "\"batteryVoltage\":" + String(v, 1) + ",";
-                json += "\"voltage\":" + String(v, 1) + ",";
-                json += "\"batteryHealth\":\"" + String(vehicleStatus.getBatteryHealthStr()) + "\",";
-                json += "\"acc\":" + String(vehicleStatus.isAccOn() ? "true" : "false") + ",";
-                json += "\"handBrake\":" + String(vehicleStatus.isHandBrakeEngaged() ? "true" : "false") + ",";
-                json += "\"handbrake\":" + String(vehicleStatus.isHandBrakeEngaged() ? "true" : "false") + ",";
-                json += "\"driverDoorOpen\":" + String(vehicleStatus.isDriverDoorOpen() ? "true" : "false") + ",";
-                // Gear
-                bool isNeutral = (digitalRead(PIN_NEUTRAL) == LOW);
-                json += "\"gear\":\"" + String(isNeutral ? "N" : "D") + "\",";
-                // Config
-                json += "\"config_locked\":" + String(webAccessLocked ? "true" : "false") + ",";
-                json += "\"ble_scan\":" + String(bleScanEnabled ? "true" : "false") + ",";
-                json += "\"nfc_scan\":" + String(authMethodNFC ? "true" : "false") + ",";
-                // BLE
-#if ENABLE_BLE
-                json += "\"ble_authorized\":" + String(bleManager.isAuthorizedDeviceConnected() ? "true" : "false") + ",";
-                json += "\"ble_auth_valid\":" + String(bleManager.isAuthorizedDeviceConnected() ? "true" : "false") + ",";
-                json += "\"ble_scanning\":" + String(bleManager.isScanningBLE() ? "true" : "false") + ",";
-                json += "\"ble_last_seen\":" + String(bleManager.getLastSeenSec());
-#else
-                json += "\"ble_authorized\":false,";
-                json += "\"ble_auth_valid\":false,";
-                json += "\"ble_scanning\":false,";
-                json += "\"ble_last_seen\":-1";
-#endif
-                json += "}";
+                String json = "{" + buildBaseStatusString() + "}";
                 webManager.broadcastStatus(json);
             }
         }
-        touch(TASK_SENSOR);
-        vTaskDelay(pdMS_TO_TICKS(80));
+        vTaskDelay(pdMS_TO_TICKS(50));  // yield to other tasks
     }
 }
-
 void watchdogTask(void*) {
     touch(TASK_WATCHDOG);
     for (;;) {
@@ -437,3 +415,7 @@ bool TaskManager::sendVehicleCommand(VehicleCommandType type, uint32_t timeoutMs
     }
     return queued;
 }
+
+
+
+

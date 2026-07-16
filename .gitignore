@@ -18,3 +18,36 @@ Desktop.ini
 
 # Temp
 temp/
+
+# Build artifacts (local)
+build/
+.cache/
+libdeps/
+packages/
+platforms/
+
+# Dev helper scripts
+*_patch.py
+*_patch_*.py
+fix_*.ps1
+fix_*.js
+check_*.ps1
+check_*.js
+find_*.ps1
+insert_*.ps1
+update_header*.js
+rewrite_*.js
+add_debug*.js
+debug_line.js
+gen_4g_report.py
+context_*.txt
+temp_original.h
+temp_cellular_replace.txt
+_patch.py
+
+# Backup files
+*.bak
+
+# Telemetry / state (local)
+telemetry.json
+appstate.json

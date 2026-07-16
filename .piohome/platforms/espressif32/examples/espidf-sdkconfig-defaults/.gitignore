@@ -1,4 +1,0 @@
-sdkconfig.*
-!sdkconfig.base
-!sdkconfig.override
-.pio/

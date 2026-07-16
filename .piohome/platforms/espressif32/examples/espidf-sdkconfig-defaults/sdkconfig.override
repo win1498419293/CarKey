@@ -1,3 +1,0 @@
-# Override: log level INFO (3) — must override base value of WARN (2)
-CONFIG_LOG_DEFAULT_LEVEL_INFO=y
-CONFIG_LOG_DEFAULT_LEVEL=3

@@ -1,4 +1,4 @@
-#include <Arduino.h>
+﻿#include <Arduino.h>
 #include <esp_wifi.h>
 #include <soc/soc.h>
 
@@ -16,11 +16,17 @@
 #include "WebManager.h"
 #include "OTAManager.h"
 #include "StatusLight.h"
+#include "MqttManager.h"
+#include "NetworkManager.h"
 #include "DisplayManager.h"
 #include "SleepManager.h"
+#if ENABLE_CELLULAR
+#include "CellularManager.h"
+#endif
 
 NFCManager nfcManager;
 RelayManager relayManager;
+MqttManager mqttManager;
 StateMachine stateMachine(&relayManager);
 
 void setup() {
@@ -53,6 +59,11 @@ void setup() {
     TaskManager::begin();
     StatusLight::setIdle();
     sleepManager.init();
+#if ENABLE_CELLULAR
+    cellularManager.init();
+#endif
+    networkManager.init();
+    mqttManager.init(&networkManager);
     Logger::info("DONE");
 }
 
@@ -61,3 +72,4 @@ void loop() {
     sleepManager.update();
     vTaskDelay(pdMS_TO_TICKS(500));
 }
+

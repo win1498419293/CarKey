@@ -1,4 +1,5 @@
-#include "WebManager.h"
+﻿#include "WebManager.h"
+#include "StatusJsonBuilder.h"
 #include "Config.h"
 #include "RelayManager.h"
 #include "StateMachine.h"
@@ -151,7 +152,11 @@ bool ensureSpiffsMounted(bool forceRetry = false) {
 }
 
 void ensureWifiConnected() {
-    if (wifi_ssid.length() == 0) return;
+
+#if TEST_4G_ONLY
+    return;  // 4G test mode: skip WiFi connection
+#endif
+if (wifi_ssid.length() == 0) return;
     if (WiFi.status() == WL_CONNECTED) return;
 
     static unsigned long lastAttemptMs = 0;
@@ -472,50 +477,15 @@ void WebManager::setupRoutes() {
 
 
     server.on("/api/status", []() {
-        bool isHandbrakePulled = (digitalRead(PIN_HANDBRAKE) == LOW);
-        bool isInNeutral = (digitalRead(PIN_NEUTRAL) == LOW);
-
-        float currentVoltage = batteryVoltage.hasReading() ? batteryVoltage.getVoltage() : 0.0f;
-        bool lowBattery = batteryVoltage.isLowForRemoteStart();
-        String gearState = isInNeutral ? "N" : "D";
-
-        String json = "{";
-        json += "\"voltage\":" + String(currentVoltage, 1) + ",";
-        json += "\"low_battery\":" + String(lowBattery ? "true" : "false") + ",";
-        json += "\"batteryVoltage\":" + String(currentVoltage, 1) + ",";
-        json += "\"batteryHealth\":\"" + String(vehicleStatus.getBatteryHealthStr()) + "\",";
-        json += "\"handbrake\":" + String(isHandbrakePulled ? "true" : "false") + ",";
-        json += "\"gear\":\"" + gearState + "\",";
-        json += "\"engine_running\":" + String(vehicleStatus.isEngineRunning() ? "true" : "false") + ",";
-        json += "\"config_locked\":" + String(webAccessLocked ? "true" : "false") + ",";
-        json += "\"locked\":" + String(webAccessLocked ? "true" : "false") + ",";
-        json += "\"wifi_ssid\":\"" + jsonEscape(wifi_ssid) + "\",";
-        json += "\"bt_name\":\"" + jsonEscape(bt_name) + "\",";
-        json += "\"sec_auth\":" + String(secAuthEnabled ? "true" : "false") + ",";
-        json += "\"ble_scan\":" + String(bleScanEnabled ? "true" : "false") + ",";
-        json += "\"nfc_scan\":" + String(authMethodNFC ? "true" : "false") + ",";
-        json += "\"build_stamp\":\"" + String(kBuildStamp) + "\",";
-        json += "\"ip\":\"" + WiFi.localIP().toString() + "\",";
-        #if ENABLE_BLE
-        json += "\"ble_scanning\":" + String(bleManager.isScanningBLE() ? "true" : "false");
-        json += ",\"ble_ready\":" + String(bleManager.isReady() ? "true" : "false");
-        json += ",\"ble_auth_valid\":" + String(bleManager.isAuthorizedDeviceConnected() ? "true" : "false");
-        json += ",\"ble_authorized\":" + String(bleManager.isAuthorizedDeviceConnected() ? "true" : "false");
-        json += ",\"ble_last_seen\":" + String(bleManager.getLastSeenSec());
-        json += ",\"ble_cooldown_active\":" + String(bleManager.isScanCooldownActive() ? "true" : "false");
-        json += ",\"ble_cooldown_remaining_ms\":" + String(bleManager.getScanCooldownRemainingMs());
-#else
-        json += "\"ble_scanning\":\"false\"";
-        json += ",\"ble_ready\":false";
-        json += ",\"ble_auth_valid\":false";
-        json += ",\"ble_authorized\":false";
-        json += ",\"ble_last_seen\":-1";
-        json += ",\"ble_cooldown_active\":false";
-        json += ",\"ble_cooldown_remaining_ms\":0";
-#endif
-        json += "}";
+        String json = "{" + buildBaseStatusString() + "}";
         sendNoCacheHeaders();
         server.send(200, "application/json", json);
+    });
+        server.on("/api/debug", []() {
+        sendNoCacheHeaders();
+        String logs = takeWebLogBuffer();
+        if (logs.length() == 0) logs = "[no logs]\\n";
+        server.send(200, "text/plain; charset=utf-8", logs);
     });
 
     server.on("/api/get_config", []() {
@@ -740,6 +710,13 @@ void WebManager::setupRoutes() {
         server.send(200, "application/json", "{\"success\":true,\"message\":\"Pairing cleared\"}");
     });
 
+    server.on("/system", []() {
+        sendNoCacheHeaders();
+        server.send_P(200, "text/html; charset=utf-8", kSystemPage);
+    });
+    Logger::info("[Web] /system page registered");
+
+
 server.on("/api/system/info", []() {
         sendNoCacheHeaders();
         String json = "{";
@@ -843,6 +820,10 @@ String WebManager::scanWiFi() {
     WiFi.scanDelete();
     return json;
 }
+
+
+
+
 
 
 
