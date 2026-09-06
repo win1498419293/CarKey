@@ -21,9 +21,15 @@
 #endif
 
 // ===== Feature switches =====
+#ifndef ENABLE_NFC
 #define ENABLE_NFC true
+#endif
+#ifndef ENABLE_BLE
 #define ENABLE_BLE true
+#endif
+#ifndef ENABLE_CELLULAR
 #define ENABLE_CELLULAR true
+#endif
 
 // ===== Test mode =====
 // Set to true to disable WiFi and test 4G-only

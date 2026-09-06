@@ -51,10 +51,6 @@ uint32_t g_recoveryPdp = 0;
 uint32_t g_recoveryCfun = 0;
 
 // ????
-uint32_t g_cmdVerified = 0;
-uint32_t g_cmdRejected = 0;
-
-// ????
 int g_lastRssi = 99;
 int g_lastDbm = 0;
 
@@ -62,6 +58,10 @@ int g_lastDbm = 0;
 uint32_t g_gpsFixOk = 0;
 uint32_t g_gpsFixFail = 0;
 #endif
+
+// MQTT may run over WiFi even when the cellular feature is disabled.
+uint32_t g_cmdVerified = 0;
+uint32_t g_cmdRejected = 0;
 
 unsigned long g_nextReportAtMs = 0;
 constexpr unsigned long kReportIntervalMs = 60000;
@@ -203,14 +203,6 @@ void onCellularRecovery(const char* level) {
     }
 }
 
-void onCommandReceived(bool verified) {
-    if (verified) {
-        g_cmdVerified++;
-    } else {
-        g_cmdRejected++;
-    }
-}
-
 void onSignalQuality(int rssi, int dBm) {
     g_lastRssi = rssi;
     g_lastDbm = dBm;
@@ -240,5 +232,13 @@ String getMqttStatusJson() {
     return json;
 }
 #endif
+
+void onCommandReceived(bool verified) {
+    if (verified) {
+        g_cmdVerified++;
+    } else {
+        g_cmdRejected++;
+    }
+}
 
 }  // namespace Metrics

@@ -39,7 +39,6 @@ void loadSystemConfig() {
     authMethodNFC = prefs.getBool("auth_nfc", true);
     Logger::info("[Config] Loaded auth_nfc: " + String(authMethodNFC ? "true" : "false"));
     authMethodBLE = prefs.getBool("auth_ble", true);
-    authMethodBLE = bleScanEnabled;
     prefs.end();
     Logger::info("--- config loaded ---");
 }
@@ -59,7 +58,7 @@ bool saveSystemConfig() {
     ok = ok && prefs.putBool("ble_scan", bleScanEnabled);
     Logger::info("[Config] Saving auth_nfc: " + String(authMethodNFC ? "true" : "false"));
     ok = ok && prefs.putBool("auth_nfc", authMethodNFC);
-    ok = ok && prefs.putBool("auth_ble", bleScanEnabled);
+    ok = ok && prefs.putBool("auth_ble", authMethodBLE);
     prefs.end();
 
     if (!ok) {

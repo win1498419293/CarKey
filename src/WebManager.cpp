@@ -315,41 +315,6 @@ void WebManager::init() {
         g_serverStarted = true;
         Logger::info("[WebManager] HTTP server started");
     }
-    return;
-    // Fall through: SPIFFS mount and WiFi connection
-    if (!SPIFFS.begin(true)) {
-        Logger::error("[WebManager] SPIFFS mount failed!");
-    } else {
-        Logger::info("[WebManager] SPIFFS mounted, total=" + String(SPIFFS.totalBytes()) +
-                     " used=" + String(SPIFFS.usedBytes()));
-    }
-
-    Logger::info("[WebManager] Connecting WiFi to SSID: " + wifi_ssid);
-    Logger::info("[WebManager] WiFi password: " + wifi_pass);
-    setCpuFrequencyMhz(80);
-    delay(50);
-    WiFi.mode(WIFI_STA);
-    WiFi.onEvent([](arduino_event_id_t event, arduino_event_info_t info) {
-        switch (event) {
-            case ARDUINO_EVENT_WIFI_STA_START:
-                Logger::info("[WiFi] STA started");
-                break;
-            case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-                Logger::info("[WiFi] STA connected to AP");
-                break;
-            case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-                Logger::info("[WiFi] Got IP: " + WiFi.localIP().toString());
-                break;
-            case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-                Logger::warn("[WiFi] Disconnected, reason=" + String(info.wifi_sta_disconnected.reason) + " SSID=" + wifi_ssid);
-                break;
-            default: break;
-        }
-    });
-    WiFi.begin(wifi_ssid.c_str(), wifi_pass.c_str());
-    setCpuFrequencyMhz(240);
-    setupRoutes();
-    server.begin();
 }
 
 
@@ -388,7 +353,25 @@ void WebManager::wsLoop() {
 }
 
 void WebManager::setupRoutes() {
-    // Root route - serve embedded page as SPIFFS fallback
+    // --- History APIs ---
+    server.on("/api/history/logs", []() {
+        sendNoCacheHeaders();
+        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::LOG));
+    });
+    server.on("/api/history/auth", []() {
+        sendNoCacheHeaders();
+        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::AUTH));
+    });
+    server.on("/api/history/start", []() {
+        sendNoCacheHeaders();
+        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::START));
+    });
+    server.on("/api/history/ota", []() {
+        sendNoCacheHeaders();
+        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::OTA));
+    });
+
+    // Root route
     server.on("/manifest.json", []() {
         sendNoCacheHeaders();
         server.send(200, "application/json",
@@ -428,7 +411,7 @@ void WebManager::setupRoutes() {
         bool started = vehicleStatus.verifyEngineStart();
 
         if (started) {
-            stateMachine.requireSecondaryAuth();
+            historyManager.recordStart("Engine", true, "voltage verified"); stateMachine.requireSecondaryAuth();
             sendNoCacheHeaders();
             server.send(200, "text/plain", "ENGINE_STARTED");
         } else {
@@ -499,9 +482,7 @@ void WebManager::setupRoutes() {
         json += "\"bt_name\":\"" + jsonEscape(bt_name) + "\",";
         json += "\"sec_auth\":" + String(secAuthEnabled ? "true" : "false") + ",";
         json += "\"ble_scan\":" + String(bleScanEnabled ? "true" : "false") + ",";
-        json += "\"nfc_scan\":" + String(authMethodNFC ? "true" : "false") + ",";
-        json += "\"sec_auth\":" + String(secAuthEnabled ? "true" : "false");
-        json += ",\"ble_scan\":" + String(bleScanEnabled ? "true" : "false");
+        json += "\"nfc_scan\":" + String(authMethodNFC ? "true" : "false");
         json += "}";
         sendNoCacheHeaders();
         server.send(200, "application/json", json);
@@ -539,11 +520,13 @@ void WebManager::setupRoutes() {
         if (server.hasArg("ble_scan")) {
             bleScanEnabled = (server.arg("ble_scan") == "true");
             authMethodBLE = bleScanEnabled;
+#if ENABLE_BLE
             if (!bleScanEnabled) {
                 bleManager.stopActiveScan();
             } else {
                 bleManager.init();
             }
+#endif
         }
         if (server.hasArg("nfc_scan")) {
             authMethodNFC = (server.arg("nfc_scan") == "true");
@@ -570,26 +553,6 @@ void WebManager::setupRoutes() {
         String logs = takeWebLogBuffer();
         sendNoCacheHeaders();
         server.send(200, "text/plain", logs);
-    // --- History APIs ---
-    server.on("/api/history/logs", []() {
-        sendNoCacheHeaders();
-        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::LOG));
-    });
-
-    server.on("/api/history/auth", []() {
-        sendNoCacheHeaders();
-        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::AUTH));
-    });
-
-    server.on("/api/history/start", []() {
-        sendNoCacheHeaders();
-        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::START));
-    });
-
-    server.on("/api/history/ota", []() {
-        sendNoCacheHeaders();
-        server.send(200, "application/json", historyManager.getHistoryJson(HistoryType::OTA));
-    });
     });
 
 
@@ -695,6 +658,7 @@ void WebManager::setupRoutes() {
     // After WiFi connected, yield airtime to NFC
     
     // BLE pairing API endpoints
+#if ENABLE_BLE
     server.on("/api/ble/pairing/start", []() {
         if (sendIfConfigLocked()) return;
         sendNoCacheHeaders();
@@ -730,6 +694,7 @@ void WebManager::setupRoutes() {
         bleManager.clearPairing();
         server.send(200, "application/json", "{\"success\":true,\"message\":\"Pairing cleared\"}");
     });
+#endif
 
 
 
@@ -791,6 +756,7 @@ void WebManager::handle() {
         }
 
         server.handleClient();
+        webSocket.loop();
         return;
     }
 

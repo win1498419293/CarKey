@@ -13,6 +13,8 @@
 #include "NFCManager.h"
 #include "RelayManager.h"
 #include "RFManager.h"
+#include "HistoryManager.h"
+extern unsigned long g_lastNfcAuthMs;
 #include "StatusLight.h"
 #include "DisplayManager.h"
 #include "StateMachine.h"
@@ -254,7 +256,9 @@ void nfcTask(void*) {
                 Logger::debug("[NFC] card UID: " + uidStr);
 
                 StatusLight::setAuthenticating();
-                if (AuthManager::verify(uid, uidLength)) {
+                const bool authorized = AuthManager::verify(uid, uidLength);
+                historyManager.recordAuth("NFC", uidStr, authorized);
+                if (authorized) { g_lastNfcAuthMs = millis();
                     TaskManager::sendVehicleCommand(VehicleCommandType::VEHICLE_CMD_LOCK_TOGGLE_FROM_NFC, 0);
                 } else {
                     TaskManager::sendVehicleCommand(VehicleCommandType::AUTH_NFC_FAIL, 0);
